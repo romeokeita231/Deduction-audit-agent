@@ -8,8 +8,8 @@ Status: accepted
 
 ## Considered Options
 
-- **双服务（Python agent + Java API）**：更贴近 JD 里"Java 为主 + Python 做 AI"的表述，但要多写约 600 行胶水代码，且引入一类作者无法在面试中辩护的失败模式。
-- **纯 Python**：与 JD 的"Proficiency in Java"冲突，直接排除。
+- **双服务（Python agent + Java API）**：更贴近"Java 为主、Python 做 AI"的技术分工，但要多写约 600 行胶水代码，且引入一类单人维护不动的失败模式。
+- **纯 Python**：与"以 Java 为主"的定位冲突，直接排除。
 
 ## Consequences
 
