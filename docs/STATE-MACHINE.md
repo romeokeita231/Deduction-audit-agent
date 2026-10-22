@@ -10,7 +10,7 @@
 | `PARKED` | 停靠等人工：原因码未映射 / 评估连续失败 / 证据不足 | | |
 | `EVALUATING` | Validator 正在跑 | | |
 | `AWAITING_ACTION` | Verdict 已出，等 AR 决定争不争 | | |
-| `DISPUTED` | 争议已提交，等零售商议结果 | | |
+| `DISPUTED` | 文书已生成、由 AR 在系统外提交，等零售商议结果 | | |
 | `ACCEPTED` | 接受扣款（认可零售商） | ✓ | |
 | `WRITTEN_OFF` | 放弃争议（不认可，但成本不划算） | ✓ | |
 | `EXPIRED` | 争议窗口已过 | ✓ | |
@@ -20,6 +20,8 @@
 `ACCEPTED` 与 `WRITTEN_OFF` 都是"没拿回钱"，但业务含义相反：前者认账，后者认亏不认理。**合并成一个状态会丢掉这个区别**，而它恰好是面试里能讲的东西。
 
 `DISPUTED` 不进分母：分母的定义是"已出结果"，不是"提交过"。未决争议计入分母会让赢率随处理速度波动。
+
+`DISPUTED` 不表示系统完成了对外交互：本系统没有 EDI 出口，文书导出后由 AR 在系统外发送，`WON` / `LOST` 也是人工回填。
 
 ## 转移
 
@@ -32,9 +34,9 @@
 | `PARKED` | `EXPIRED` | 定时扫描 | `now > windowEndsAt` |
 | `PARKED` | `WRITTEN_OFF` | 人工放弃 | 补证不划算时直接放弃，不必重跑一遍评估 |
 | `EVALUATING` | `AWAITING_ACTION` | Validator 返回 | Verdict 已落库 |
-| `EVALUATING` | `NEW` | 基础设施失败（工具异常 / 429 / 超时） | 重试次数 < 2，且本次 30s 预算还剩 > 5s |
-| `EVALUATING` | `PARKED` | 同上 | 重试次数 ≥ 2，或 30s 预算耗尽 |
-| `AWAITING_ACTION` | `DISPUTED` | AR 提交争议 | Verdict 为 `DISPUTABLE` |
+| `EVALUATING` | `NEW` | 基础设施失败（工具异常 / 429 / 超时） | 重试次数 < 2，且本次剩余预算 > 12s（≥ 一次完整模型往返） |
+| `EVALUATING` | `PARKED` | 同上 | 重试次数 ≥ 2，或超出 45s 硬截止 |
+| `AWAITING_ACTION` | `DISPUTED` | AR 确认提交（文书已导出，系统不代发） | Verdict 为 `DISPUTABLE` |
 | `AWAITING_ACTION` | `ACCEPTED` | AR 接受扣款 | Verdict 为 `DEDUCTION_STANDS` |
 | `AWAITING_ACTION` | `WRITTEN_OFF` | AR 放弃 | 任意 Verdict |
 | `AWAITING_ACTION` | `PARKED` | 转人工 | Verdict 为 `INCONCLUSIVE`。**证据不足不能直接提交争议** |
@@ -87,7 +89,7 @@ Validator 的输出，独立于生命周期的三个取值：
 ## 不变量
 
 1. 终态拒绝任何转移——ADR 0001 的"关闭后不可改写"由此自动成立。
-2. `DISPUTED` 之后窗口不再计时：争议已提交，逾期风险转移到零售商侧。
+2. `DISPUTED` 之后窗口不再计时：AR 已确认提交（文书已导出），逾期风险转移到零售商侧。
 3. `EXPIRED` 只能从 `NEW` / `PARKED` / `AWAITING_ACTION` 进入，且必须满足 `now > windowEndsAt`。
 4. 同一 Deduction 同时最多一个 `EVALUATING`（Postgres advisory lock）。
 5. `DISPUTED` 必须存在对应的 Dispute 记录，且 `openedAt` 非空；`WON` / `LOST` 必须 `closedAt` 与 `result` 非空。
