@@ -19,6 +19,16 @@ See `docs/agents/triage-labels.md`.
 Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root.
 See `docs/agents/domain.md`.
 
+## UI work
+
+Load the `apple-design` skill before writing or changing templates or CSS.
+
+Its scope here is narrower than its description. Typography, restraint, feedback and
+reduced-motion apply. Gestural, spring and sheet interaction does not: the two pages are
+server-rendered over the JSON endpoints, there is no JS build chain, and a table of money
+must not animate. Amounts use tabular figures. A countdown changing its value is the only
+thing on the queue page that may animate at all.
+
 ## Local environment (Windows)
 
 - Git's bundled MSYS `ssh.exe` cannot start under the sandbox (`couldn't create signal pipe`).
