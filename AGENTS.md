@@ -1,0 +1,35 @@
+# AGENTS.md
+
+Operating notes for agents working in this repository.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live as GitHub issues, managed with the `gh` CLI.
+See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles use their default label names.
+See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `GLOSSARY.md` and `docs/adr/` at the repo root.
+See `docs/agents/domain.md`.
+
+## Local environment (Windows)
+
+- Git's bundled MSYS `ssh.exe` cannot start under the sandbox (`couldn't create signal pipe`).
+  Any networked git command needs:
+
+  ```powershell
+  $env:GIT_SSH="C:/Windows/System32/OpenSSH/ssh.exe"; $env:GIT_SSH_VARIANT="ssh"
+  ```
+
+- `origin` is `ssh://git@ssh.github.com:443/...`; `github.com:443` is unreachable from this
+  machine. `gh` goes through `api.github.com` and works without the override above.
+- Design docs and ADRs are written in Chinese; code, comments and commit messages are English.
+- All data in this repository is synthetic. Never commit generated data, credentials or
+  anything from the parent directory.
