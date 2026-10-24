@@ -34,8 +34,8 @@
 | `PARKED` | `EXPIRED` | 定时扫描 | `now > windowEndsAt` |
 | `PARKED` | `WRITTEN_OFF` | 人工放弃 | 补证不划算时直接放弃，不必重跑一遍评估 |
 | `EVALUATING` | `AWAITING_ACTION` | Validator 返回 | Verdict 已落库 |
-| `EVALUATING` | `NEW` | 基础设施失败（工具异常 / 429 / 超时） | 重试次数 < 2，且本次剩余预算 > 12s（≥ 一次完整模型往返） |
-| `EVALUATING` | `PARKED` | 同上 | 重试次数 ≥ 2，或超出 45s 硬截止 |
+| `EVALUATING` | `NEW` | 基础设施失败（工具异常 / 429 / 超时） | 已重试 0 次（至多 1 次），且本次剩余预算 > 12s（≥ 一次完整模型往返） |
+| `EVALUATING` | `PARKED` | 同上 | 已重试 1 次仍失败，或超出 45s 硬截止 |
 | `AWAITING_ACTION` | `DISPUTED` | AR 确认提交（文书已导出，系统不代发） | Verdict 为 `DISPUTABLE` |
 | `AWAITING_ACTION` | `ACCEPTED` | AR 接受扣款 | Verdict 为 `DEDUCTION_STANDS` |
 | `AWAITING_ACTION` | `WRITTEN_OFF` | AR 放弃 | 任意 Verdict |
@@ -50,7 +50,7 @@
 | `parkedReason` | 触发 | 人该做什么 |
 |---|---|---|
 | `UNMAPPED_CODE` | Reason Code 不在映射表 | 补映射，回 `NEW` |
-| `EVAL_FAILED` | 连续 3 次评估失败 | 看 Mongo 里的 trace，修完回 `NEW` |
+| `EVAL_FAILED` | 重试后仍失败（共 2 次尝试） | 看 Mongo 里的 trace，修完回 `NEW` |
 | `EVIDENCE_GAP` | Verdict 为 `INCONCLUSIVE`，且 `missingEvidence` 非空 | 补证据（找承运人要 POD），回 `NEW` 重跑；补不到就 `WRITTEN_OFF` |
 | `POLICY_GAP` | Verdict 为 `INCONCLUSIVE`，且 `missingEvidence` 为空 | 规则没覆盖这种冲突。补证据没用，要人工裁定或补政策，然后回 `NEW` |
 
