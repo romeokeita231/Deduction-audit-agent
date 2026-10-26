@@ -90,17 +90,11 @@ public class DeductionController {
         return ResponseEntity.status(status).body(body);
     }
 
-    @PostMapping(value = "/deductions/{id}/dispute", produces = MediaType.APPLICATION_JSON_VALUE,
-            consumes = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/deductions/{id}/dispute", produces = MediaType.APPLICATION_JSON_VALUE)
     public ActionOutcome dispute(@PathVariable UUID id,
                                  @RequestBody(required = false) DisputeRequest request) {
         DisputeRequest body = request == null ? new DisputeRequest(null, null) : request;
         return actions.dispute(id, body.submittedBy(), body.note());
-    }
-
-    @PostMapping(value = "/deductions/{id}/dispute", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ActionOutcome disputeWithoutBody(@PathVariable UUID id) {
-        return actions.dispute(id, null, null);
     }
 
     @PostMapping(value = "/deductions/{id}/close", produces = MediaType.APPLICATION_JSON_VALUE,

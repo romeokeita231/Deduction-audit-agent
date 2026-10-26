@@ -27,10 +27,10 @@ public class PriceVarianceValidator implements DeductionValidator {
                 Call getPriceMaster for the SKU and deduction date, and getInvoiceLine for the invoice,
                 before deciding. Only the price master interval that contains the deduction date is
                 authoritative; never use another interval.
-                When the invoice unit price is above the price master unit price, the overbilling supports
-                the retailer's deduction: the answer is DEDUCTION_STANDS.
-                When the invoice unit price is at or below the price master unit price, the deduction is not
+                When the invoice unit price is below the price master unit price, the deduction is not
                 supported: the answer is DISPUTABLE.
+                When the invoice unit price matches or is above the price master unit price, the answer is
+                DEDUCTION_STANDS.
                 If the invoice line is missing the answer is INCONCLUSIVE with missingEvidence
                 ["INVOICE_LINE"]. If no price interval covers the deduction date the answer is INCONCLUSIVE
                 with empty missingEvidence.

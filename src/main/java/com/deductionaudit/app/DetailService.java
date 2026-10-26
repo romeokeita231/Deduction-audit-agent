@@ -6,6 +6,7 @@ import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.persistence.DeductionStore;
 import com.deductionaudit.trace.TraceEntry;
 import com.deductionaudit.trace.TraceRecorder;
+import com.deductionaudit.trace.TraceUnavailableException;
 import com.deductionaudit.web.ApiException;
 import org.springframework.stereotype.Service;
 
@@ -76,7 +77,8 @@ public class DetailService {
             List<AttemptView> attempts,
             EvaluationView evaluation,
             List<TransitionView> transitions,
-            List<TraceEntry> trace) {
+            List<TraceEntry> trace,
+            boolean traceUnavailable) {
     }
 
     public DetailView detail(UUID id, Integer requestedAttempt) {
@@ -113,6 +115,15 @@ public class DetailService {
                         row.from() == null ? null : row.from().name(),
                         row.to().name(), row.event(), row.attemptNo(), row.occurredAt()))
                 .toList();
+        List<TraceEntry> traceEntries = List.of();
+        boolean traceUnavailable = false;
+        if (attemptNo != 0) {
+            try {
+                traceEntries = trace.read(id, attemptNo);
+            } catch (TraceUnavailableException e) {
+                traceUnavailable = true;
+            }
+        }
         return new DetailView(deduction.id(), deduction.retailerId(), retailerName, deduction.reasonCode(),
                 deduction.category() == null ? null : deduction.category().name(), deduction.amount(),
                 deduction.currency(), deduction.deductionDate(), deduction.receivedAt(),
@@ -120,7 +131,6 @@ public class DetailService {
                 deduction.parkedReason() == null ? null : deduction.parkedReason().name(),
                 windows.daysRemaining(deduction, timeZone),
                 deduction.status() == DeductionStatus.EXPIRED || windows.isExpired(deduction, timeZone),
-                attempts, evaluation, transitions,
-                attemptNo == 0 ? List.of() : trace.read(id, attemptNo));
+                attempts, evaluation, transitions, traceEntries, traceUnavailable);
     }
 }

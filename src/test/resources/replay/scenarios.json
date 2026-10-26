@@ -68,6 +68,24 @@
         }
       ]
     },
+    "44444444-4444-4444-4444-444444444444": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-FOUR\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-FOUR\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-FOUR\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DISPUTABLE\",\"missingEvidence\":[],\"references\":[\"EDI812:44444444-4444-4444-4444-444444444444\"],\"supportingEvidence\":[\"BOL:SHP-FOUR\",\"POD:SHP-FOUR\"],\"reasoning\":\"BOL shipped 50, POD accepted 40; the loss happened with the carrier.\"}"
+            }
+          ]
+        }
+      ]
+    },
     "55555555-5555-5555-5555-555555555555": {
       "attempts": [
         {
@@ -254,6 +272,23 @@
           "rounds": [
             {
               "delayMs": 5000
+            }
+          ]
+        }
+      ]
+    },
+    "19191919-1919-1919-1919-191919191919": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getPriceMaster", "arguments": "{\"sku\":\"SKU-1\",\"onDate\":\"2026-01-15\"}"},
+                {"name": "getInvoiceLine", "arguments": "{\"invoiceNo\":\"INV-JAN\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DEDUCTION_STANDS\",\"missingEvidence\":[],\"references\":[\"EDI812:19191919-1919-1919-1919-191919191919\"],\"supportingEvidence\":[\"PRICE:SKU-1:2026-01-01\",\"INVOICE:INV-JAN\"],\"reasoning\":\"The narrow interval covering January is the effective one; the invoice billed above it.\"}"
             }
           ]
         }

@@ -74,7 +74,8 @@ public class MongoTraceRecorder implements TraceRecorder {
                     doc.getString("error"))).toList();
         } catch (RuntimeException e) {
             log.warn("trace read failed for {} attempt {}", deductionId, attemptNo, e);
-            return List.of();
+            throw new TraceUnavailableException(
+                    "the trace store could not be read for attempt " + attemptNo, e);
         }
     }
 

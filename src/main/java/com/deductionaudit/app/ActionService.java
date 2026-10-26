@@ -69,18 +69,14 @@ public class ActionService {
                     TransitionContext.empty(), null);
             return new ActionOutcome(writtenOff.id(), writtenOff.status(), null, null, null, null);
         }
-        if ("PARKED".equals(outcome)) {
-            VerdictRecord verdict = requireAwaitingAction(deduction);
-            Deduction parked = transitions.apply(deduction, TransitionEvent.PARK_FOR_HUMAN,
-                    TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()), null);
-            return new ActionOutcome(parked.id(), parked.status(), null, null, null,
-                    parked.parkedReason() == null ? null : parked.parkedReason().name());
-        }
-        throw ApiException.badRequest("INVALID_OUTCOME", "outcome must be ACCEPTED, WRITTEN_OFF or PARKED");
+        throw ApiException.badRequest("INVALID_OUTCOME", "outcome must be ACCEPTED or WRITTEN_OFF");
     }
 
     @Transactional
     public ActionOutcome recordResult(UUID id, String result, Instant closedAt) {
+        if (closedAt == null) {
+            throw ApiException.badRequest("RESULT_INCOMPLETE", "closedAt is required");
+        }
         Deduction deduction = load(id);
         if (deduction.status() != DeductionStatus.DISPUTED) {
             throw ApiException.conflict("ILLEGAL_TRANSITION",
@@ -88,12 +84,11 @@ public class ActionService {
         }
         var dispute = store.findDispute(id)
                 .orElseThrow(() -> ApiException.conflict("NO_DISPUTE", "a dispute record is required"));
-        Instant effectiveClosedAt = closedAt == null ? clock.instant() : closedAt;
-        store.closeDispute(id, effectiveClosedAt, result);
+        store.closeDispute(id, closedAt, result);
         Deduction resolved = transitions.apply(deduction, TransitionEvent.RECORD_RESULT,
                 new TransitionContext(false, null, List.of(), 0, Duration.ZERO, true, true, result), null);
         return new ActionOutcome(resolved.id(), resolved.status(), dispute.id().toString(),
-                dispute.openedAt(), effectiveClosedAt, result);
+                dispute.openedAt(), closedAt, result);
     }
 
     private Deduction load(UUID id) {

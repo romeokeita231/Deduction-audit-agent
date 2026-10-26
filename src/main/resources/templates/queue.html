@@ -65,7 +65,9 @@
             <td th:text="${row.windowEndsAt}">2026-01-31</td>
             <td class="num" th:classappend="${row.expired} ? 'expired'"
                 th:text="${row.daysRemaining != null} ? ${row.daysRemaining} : 'paused'">0</td>
-            <td><span class="badge" th:text="${row.status}">NEW</span></td>
+            <td><span class="badge" th:text="${row.status}">NEW</span>
+                <span class="muted" th:if="${row.parkedReason}" th:text="' · ' + ${row.parkedReason}">REASON</span>
+            </td>
             <td th:text="${row.verdict} ?: '—'">—</td>
         </tr>
         <tr th:if="${#lists.isEmpty(rows)}">

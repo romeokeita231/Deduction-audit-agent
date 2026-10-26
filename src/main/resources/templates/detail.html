@@ -130,7 +130,8 @@
     </table>
 
     <h2>Trace</h2>
-    <p class="muted" th:if="${#lists.isEmpty(detail.trace)}">No trace events recorded for this attempt.</p>
+    <p class="muted" th:if="${detail.traceUnavailable}">Trace unavailable for this attempt: the trace store could not be read.</p>
+    <p class="muted" th:if="${#lists.isEmpty(detail.trace) and !detail.traceUnavailable}">No trace events recorded for this attempt.</p>
     <table th:if="${!detail.trace.isEmpty()}">
         <thead><tr><th>Type</th><th>Name</th><th>At</th><th class="num">Duration ms</th><th>Request</th><th>Evidence</th></tr></thead>
         <tbody>

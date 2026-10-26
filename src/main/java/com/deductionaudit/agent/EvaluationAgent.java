@@ -111,7 +111,7 @@ public class EvaluationAgent {
         }
         AgentVerdict verdict = parse(response);
         if (verdict == null || verdict.verdict() == null) {
-            throw new InfrastructureFailure("the model returned no verdict");
+            throw new ModelOutputInvalid("the model returned no verdict");
         }
         List<String> references = verdict.references() == null ? List.of() : verdict.references();
         List<String> supporting = verdict.supportingEvidence() == null ? List.of()
@@ -179,7 +179,7 @@ public class EvaluationAgent {
         try {
             return JSON.readValue(text, AgentVerdict.class);
         } catch (Exception e) {
-            throw new InfrastructureFailure("the model answer is not a verdict: " + e.getMessage());
+            throw new ModelOutputInvalid("the model answer is not a verdict: " + e.getMessage());
         }
     }
 
@@ -266,6 +266,12 @@ public class EvaluationAgent {
     public static final class EvidenceClosedSetViolation extends RuntimeException {
         public EvidenceClosedSetViolation(String message, Throwable cause) {
             super(message, cause);
+        }
+    }
+
+    public static final class ModelOutputInvalid extends RuntimeException {
+        public ModelOutputInvalid(String message) {
+            super(message);
         }
     }
 }

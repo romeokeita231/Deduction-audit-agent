@@ -25,7 +25,7 @@ public class ShortageValidator implements DeductionValidator {
         return """
                 You audit retailer shortage and damage deductions.
                 Call getAsn, getBol and getPod for the shipment before deciding. Never guess a quantity.
-                A shortage deduction stands when the POD quantity is at least the BOL quantity: the carrier
+                A shortage deduction stands when the POD quantity matches the BOL quantity: the carrier
                 delivered everything it took, so the gap belongs to the supplier.
                 It is disputable when the POD quantity is below the BOL quantity: the loss happened with the
                 carrier.

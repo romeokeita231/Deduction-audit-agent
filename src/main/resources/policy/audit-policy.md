@@ -9,14 +9,15 @@ can read.
 - The ASN states what we declared we would ship. It is a claim made by the Supplier.
 - The BOL states what the carrier actually took. The BOL decides the shipped quantity.
 - The POD states what the receiver actually accepted. The POD decides the received quantity.
-- A shortage deduction stands when the received quantity matches the BOL quantity, or when
-  the received quantity matches what the retailer deducted.
-- It is disputable when the POD shows more received units than the retailer's deduction
-  accounts for, and the BOL agrees with the POD or is higher.
-- When the BOL and the POD disagree and no rule selects one, the answer is INCONCLUSIVE.
-  Do not average the documents and do not give the EDI 812 the final word.
+- When the POD quantity matches the BOL quantity, everything the carrier took was delivered, so
+  the shortage deduction stands.
+- When the POD quantity is below the BOL quantity, the units were lost in transit: the shortage
+  deduction is disputable.
+- The deduction's own share of the gap is only claimed once; never add it to the POD.
+- Do not average the documents and do not give the EDI 812 the final word.
 - Damage claims follow the same evidence: the POD is the record of what arrived. If the POD
   is missing, the answer is INCONCLUSIVE with missingEvidence containing POD.
+- If the BOL is missing, the answer is INCONCLUSIVE with missingEvidence containing BOL.
 
 ## Price variance
 

@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,9 +31,10 @@ class MongoTraceRecorderTest {
     }
 
     @Test
-    void aBrokenTraceReadReturnsEmpty() {
+    void aBrokenTraceReadAnnouncesItself() {
         when(mongo.find(any(Query.class), eq(Document.class), anyString()))
                 .thenThrow(new RuntimeException("mongo is down"));
-        assertThat(recorder.read(UUID.randomUUID(), 1)).isEmpty();
+        assertThatThrownBy(() -> recorder.read(UUID.randomUUID(), 1))
+                .isInstanceOf(TraceUnavailableException.class);
     }
 }

@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -27,13 +28,15 @@ public class UiController {
     private final DetailService details;
     private final EvaluationService evaluations;
     private final ActionService actions;
+    private final Clock clock;
 
     public UiController(QueueService queue, DetailService details, EvaluationService evaluations,
-                        ActionService actions) {
+                        ActionService actions, Clock clock) {
         this.queue = queue;
         this.details = details;
         this.evaluations = evaluations;
         this.actions = actions;
+        this.clock = clock;
     }
 
     @GetMapping(value = "/queue", produces = MediaType.TEXT_HTML_VALUE)
@@ -97,10 +100,9 @@ public class UiController {
     }
 
     @PostMapping(value = "/deductions/{id}/result", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public String result(@PathVariable UUID id, @RequestParam String result,
-                         @RequestParam(required = false) String closedAt, RedirectAttributes redirect) {
+    public String result(@PathVariable UUID id, @RequestParam String result, RedirectAttributes redirect) {
         try {
-            actions.recordResult(id, result, closedAt == null || closedAt.isBlank() ? null : Instant.parse(closedAt));
+            actions.recordResult(id, result, Instant.now(clock));
         } catch (ApiException e) {
             redirect.addFlashAttribute("error", e.code() + ": " + e.getMessage());
         }

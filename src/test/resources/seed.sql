@@ -66,7 +66,9 @@ VALUES
     ('18181818-1818-1818-1818-181818181818', 'NYC', 'SHORT', 240.00, 'USD', '2026-03-05', now(),
      '2026-04-04', 'NEW', 'SHP-TIMEOUT', NULL, NULL, 0),
     ('20202020-2020-2020-2020-202020202020', 'NYC', 'PROMO', 100.00, 'USD', '2026-03-01', now(),
-     '2026-03-31', 'NEW', NULL, 'SKU-1', NULL, 0);
+     '2026-03-31', 'NEW', NULL, 'SKU-1', NULL, 0),
+    ('19191919-1919-1919-1919-191919191919', 'NYC', 'PRICE', 50.00, 'USD', '2026-01-15', now(),
+     '2026-03-20', 'NEW', NULL, 'SKU-1', 'INV-JAN', 0);
 
 UPDATE deduction d SET category = m.category
 FROM reason_code_mapping m
@@ -123,6 +125,7 @@ INSERT INTO price_master (sku, valid_from, valid_to, unit_price) VALUES
 INSERT INTO invoice_line (invoice_no, sku, qty, unit_price) VALUES
     ('INV-LOW', 'SKU-1', 10, 12.00),
     ('INV-HIGH', 'SKU-1', 10, 13.00),
+    ('INV-JAN', 'SKU-1', 10, 11.50),
     ('INV-SKU2', 'SKU-2', 5, 9.00);
 
 INSERT INTO promotion_agreement (doc_id, title, retailer_id, sku, valid_from, valid_to) VALUES

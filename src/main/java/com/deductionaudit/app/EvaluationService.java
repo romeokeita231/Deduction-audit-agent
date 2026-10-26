@@ -1,7 +1,6 @@
 package com.deductionaudit.app;
 
 import com.deductionaudit.agent.EvaluationAgent;
-import com.deductionaudit.agent.EvaluationAgent.EvidenceClosedSetViolation;
 import com.deductionaudit.agent.EvaluationAgent.InfrastructureFailure;
 import com.deductionaudit.agent.EvaluationRun;
 import com.deductionaudit.agent.validators.DeductionValidator;
@@ -121,7 +120,8 @@ public class EvaluationService {
                 store.finishAttempt(deduction.id(), attemptNo, clock.instant(),
                         timedOut ? "TIMEOUT" : "INFRA_FAILED", run.toolCallCount());
                 Duration remaining = Duration.between(clock.instant(), deadline);
-                boolean retryable = !(failure instanceof EvidenceClosedSetViolation);
+                boolean retryable = failure instanceof EvaluationAgent.InfrastructureFailure
+                        || failure instanceof EvaluationTimeoutException;
                 if (retryable
                         && attemptNo < properties.maxAttempts()
                         && remaining.compareTo(properties.retryMinRemaining()) > 0) {

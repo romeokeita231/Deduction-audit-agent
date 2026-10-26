@@ -33,6 +33,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
     private static final String LA_TODAY = "16161616-1616-1616-1616-161616161616";
     private static final String PARKED = "17171717-1717-1717-1717-171717171717";
     private static final String FORGED_CLAUSE = "20202020-2020-2020-2020-202020202020";
+    private static final String CROSS_INTERVAL = "19191919-1919-1919-1919-191919191919";
 
     @Autowired
     private ExpiryService expiryService;
@@ -101,15 +102,15 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(parked.get(0).path("id").asText()).isEqualTo(PARKED);
 
         JsonNode price = getJson("/deductions?category=PRICE_VARIANCE");
-        assertThat(price).hasSize(4);
+        assertThat(price).hasSize(5);
 
         JsonNode intersection = getJson("/deductions?status=NEW&category=PRICE_VARIANCE");
-        assertThat(intersection).hasSize(4);
+        assertThat(intersection).hasSize(5);
         assertThat(row(intersection, PRICE_LOW).path("category").asText()).isEqualTo("PRICE_VARIANCE");
         assertThat(ids(intersection)).doesNotContain(UNMAPPED, DISPUTE);
 
         JsonNode all = getJson("/deductions?status=ALL");
-        assertThat(all.size()).isEqualTo(19);
+        assertThat(all.size()).isEqualTo(20);
     }
 
     private static List<String> ids(JsonNode rows) {
@@ -197,6 +198,24 @@ class PipelineIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void aRemappedReasonCodeCanBeRequeuedAndEvaluated() {
+        ResponseEntity<String> parked = post("/deductions/" + UNMAPPED + "/evaluate");
+        assertThat(parked.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(body(parked).path("parkedReason").asText()).isEqualTo("UNMAPPED_CODE");
+
+        jdbc.update("INSERT INTO reason_code_mapping (retailer_id, reason_code, category) VALUES (?, ?, ?)",
+                "NYC", "MYSTERY", "SHORTAGE");
+
+        ResponseEntity<String> rerun = post("/deductions/" + UNMAPPED + "/evaluate");
+        assertThat(rerun.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode result = body(rerun);
+        assertThat(result.path("status").asText()).isEqualTo("AWAITING_ACTION");
+        assertThat(result.path("attempt").asInt()).isEqualTo(1);
+        assertThat(result.path("verdict").path("verdict").asText()).isEqualTo("DISPUTABLE");
+        assertThat(detail(UNMAPPED).path("category").asText()).isEqualTo("SHORTAGE");
+    }
+
+    @Test
     void priceVarianceUsesOnlyTheIntervalThatCoversTheDeductionDate() {
         JsonNode low = evaluate(PRICE_LOW);
         assertThat(low.path("verdict").path("verdict").asText()).isEqualTo("DISPUTABLE");
@@ -221,6 +240,19 @@ class PipelineIntegrationTest extends IntegrationTestBase {
 
         JsonNode trace = detail(PRICE_LOW).path("trace");
         assertThat(toolNames(trace)).containsOnly("getPriceMaster", "getInvoiceLine");
+    }
+
+    @Test
+    void anOverlappingIntervalCitesTheOneThatCoversTheDeductionDate() {
+        JsonNode result = evaluate(CROSS_INTERVAL);
+        assertThat(result.path("verdict").path("verdict").asText()).isEqualTo("DEDUCTION_STANDS");
+        assertThat(texts(result.path("verdict").path("supportingEvidence")))
+                .containsExactly("PRICE:SKU-1:2026-01-01", "INVOICE:INV-JAN");
+        assertThat(jdbc.queryForObject(
+                "SELECT count(*) FROM price_master WHERE sku = 'SKU-1' AND valid_from <= ?::date "
+                        + "AND valid_to >= ?::date", Integer.class,
+                java.time.LocalDate.of(2026, 1, 15), java.time.LocalDate.of(2026, 1, 15)))
+                .isEqualTo(2);
     }
 
     @Test
@@ -340,8 +372,13 @@ class PipelineIntegrationTest extends IntegrationTestBase {
 
         assertThat(postJson("/deductions/" + DISPUTE + "/close", Map.of("outcome", "ACCEPTED"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "BOGUS"))
+        assertThat(postJson("/deductions/" + DISPUTE + "/result",
+                Map.of("result", "BOGUS", "closedAt", "2026-03-12T00:00:00Z"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        ResponseEntity<String> incomplete = postJson("/deductions/" + DISPUTE + "/result",
+                Map.of("result", "LOST"));
+        assertThat(incomplete.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(body(incomplete).path("code").asText()).isEqualTo("RESULT_INCOMPLETE");
         ResponseEntity<String> won = postJson("/deductions/" + DISPUTE + "/result",
                 Map.of("result", "WON", "closedAt", "2026-03-12T00:00:00Z"));
         assertThat(won.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -357,7 +394,8 @@ class PipelineIntegrationTest extends IntegrationTestBase {
                 .isEqualTo(HttpStatus.CONFLICT);
         assertThat(postJson("/deductions/" + DISPUTE + "/close", Map.of("outcome", "WRITTEN_OFF"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "LOST"))
+        assertThat(postJson("/deductions/" + DISPUTE + "/result",
+                Map.of("result", "LOST", "closedAt", "2026-03-12T00:00:00Z"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
 
