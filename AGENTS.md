@@ -41,5 +41,7 @@ thing on the queue page that may animate at all.
 - `origin` is `ssh://git@ssh.github.com:443/...`; `github.com:443` is unreachable from this
   machine. `gh` goes through `api.github.com` and works without the override above.
 - Design docs and ADRs are written in Chinese; code, comments and commit messages are English.
+- Integration tests need Docker. When the daemon socket is not the default, set
+  `$env:DOCKER_HOST="tcp://127.0.0.1:2375"`; without it three tests error out.
 - All data in this repository is synthetic. Never commit generated data, credentials or
   anything from the parent directory.

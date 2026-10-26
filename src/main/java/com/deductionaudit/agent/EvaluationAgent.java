@@ -18,6 +18,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.DefaultToolCallingManager;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
@@ -39,6 +40,21 @@ import java.util.concurrent.TimeoutException;
 
 @Component
 public class EvaluationAgent {
+
+    static final String OUTPUT_CONTRACT = """
+
+            Output contract:
+            Answer with one JSON object and nothing else. No prose, no explanation outside the object,
+            no markdown and no code fences.
+            The object has exactly these fields:
+              "verdict": one of "DEDUCTION_STANDS", "DISPUTABLE", "INCONCLUSIVE".
+              "missingEvidence": an array of evidence names, filled only when verdict is INCONCLUSIVE;
+                use an empty array for DEDUCTION_STANDS and DISPUTABLE.
+              "references": an array of evidence ids that were consulted but do not decide the answer,
+                such as the EDI 812 id.
+              "supportingEvidence": an array of evidence ids from the tool results that the verdict rests on.
+              "reasoning": one or two plain sentences.
+            """;
 
     private static final com.fasterxml.jackson.databind.ObjectMapper JSON =
             new com.fasterxml.jackson.databind.ObjectMapper()
@@ -78,10 +94,13 @@ public class EvaluationAgent {
         OpenAiChatOptions options = OpenAiChatOptions.builder()
                 .model(modelName)
                 .temperature(0.0)
+                .responseFormat(OpenAiChatModel.ResponseFormat.builder()
+                        .type(OpenAiChatModel.ResponseFormat.Type.JSON_OBJECT)
+                        .build())
                 .toolCallbacks(Arrays.asList(callbacks))
                 .build();
         List<Message> messages = new ArrayList<>();
-        messages.add(new SystemMessage(validator.systemPrompt(policy.text())));
+        messages.add(new SystemMessage(systemMessage(validator)));
         messages.add(new UserMessage(validator.userPrompt(deduction)));
         Prompt prompt = new Prompt(messages, options);
 
@@ -235,7 +254,11 @@ public class EvaluationAgent {
     }
 
     public String promptVersion(DeductionValidator validator) {
-        return PolicyProvider.sha256(validator.systemPrompt(policy.text())).substring(0, 12);
+        return PolicyProvider.sha256(systemMessage(validator)).substring(0, 12);
+    }
+
+    private String systemMessage(DeductionValidator validator) {
+        return validator.systemPrompt(policy.text()) + OUTPUT_CONTRACT;
     }
 
     public String policyVersion() {
