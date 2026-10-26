@@ -1,0 +1,24 @@
+spring:
+  ai:
+    model:
+      chat: none
+
+app:
+  model-name: replay
+  replay:
+    scenario: classpath:replay/scenarios.json
+  evaluation:
+    total-budget: 45s
+    p95-target: 30s
+    model-round-timeout: 12s
+    tool-timeout: 3s
+    max-tool-calls: 6
+    max-attempts: 2
+    retry-min-remaining: 12s
+  embedding:
+    api-key: ""
+
+logging:
+  level:
+    com.deductionaudit: WARN
+    org.springframework.ai: WARN

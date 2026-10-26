@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Deduction queue</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --ink: #111418;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --bg: #ffffff;
+            --accent: #1d4ed8;
+            --warn: #b45309;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+        main { max-width: 1080px; margin: 0 auto; padding: 32px 20px 64px; }
+        h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; }
+        p.sub { color: var(--muted); margin: 0 0 24px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+        th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+        td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .muted { color: var(--muted); }
+        .badge { display: inline-block; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--muted); }
+        .expired { color: var(--warn); }
+    </style>
+</head>
+<body>
+<main>
+    <h1>Deduction queue</h1>
+    <p class="sub">Sorted by days remaining in the retailer's local date. Rows past the window are marked.</p>
+    <table>
+        <thead>
+        <tr>
+            <th>Retailer</th>
+            <th>Reason</th>
+            <th>Category</th>
+            <th class="num">Amount</th>
+            <th>Deduction date</th>
+            <th>Window ends</th>
+            <th class="num">Days left</th>
+            <th>Status</th>
+            <th>Verdict</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${rows}">
+            <td><a th:href="@{/deductions/{id}(id=${row.id})}" th:text="${row.retailerName}">Retailer</a></td>
+            <td th:text="${row.reasonCode}">CODE</td>
+            <td th:text="${row.category} ?: 'unmapped'">CATEGORY</td>
+            <td class="num" th:text="${row.amount}">0.00</td>
+            <td th:text="${row.deductionDate}">2026-01-01</td>
+            <td th:text="${row.windowEndsAt}">2026-01-31</td>
+            <td class="num" th:classappend="${row.expired} ? 'expired'"
+                th:text="${row.daysRemaining != null} ? ${row.daysRemaining} : 'paused'">0</td>
+            <td><span class="badge" th:text="${row.status}">NEW</span></td>
+            <td th:text="${row.verdict} ?: '—'">—</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(rows)}">
+            <td colspan="9" class="muted">Nothing in the queue.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

@@ -1,0 +1,280 @@
+{
+  "defaultModel": "replay",
+  "deductions": {
+    "11111111-1111-1111-1111-111111111111": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-DISPUTE\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-DISPUTE\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-DISPUTE\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DISPUTABLE\",\"missingEvidence\":[],\"references\":[\"EDI812:11111111-1111-1111-1111-111111111111\"],\"supportingEvidence\":[\"BOL:SHP-DISPUTE\",\"POD:SHP-DISPUTE\"],\"reasoning\":\"BOL shipped 120, POD accepted 96; the loss happened with the carrier.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "22222222-2222-2222-2222-222222222222": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-STANDS\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-STANDS\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-STANDS\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DEDUCTION_STANDS\",\"missingEvidence\":[],\"references\":[\"EDI812:22222222-2222-2222-2222-222222222222\"],\"supportingEvidence\":[\"BOL:SHP-STANDS\",\"POD:SHP-STANDS\"],\"reasoning\":\"BOL and POD both show 100 units delivered.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "33333333-3333-3333-3333-333333333333": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-NOPOD\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-NOPOD\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-NOPOD\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"INCONCLUSIVE\",\"missingEvidence\":[\"POD\"],\"references\":[\"EDI812:33333333-3333-3333-3333-333333333333\"],\"supportingEvidence\":[\"BOL:SHP-NOPOD\"],\"reasoning\":\"The POD is missing, so the delivered quantity cannot be checked.\"}"
+            }
+          ]
+        },
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-NOPOD\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-NOPOD\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DEDUCTION_STANDS\",\"missingEvidence\":[],\"references\":[\"EDI812:33333333-3333-3333-3333-333333333333\"],\"supportingEvidence\":[\"ASN:SHP-NOPOD\",\"BOL:SHP-NOPOD\"],\"reasoning\":\"Both the ASN and the BOL show 100 units, so the shortage belongs to the supplier.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "55555555-5555-5555-5555-555555555555": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getPriceMaster", "arguments": "{\"sku\":\"SKU-1\",\"onDate\":\"2026-03-01\"}"},
+                {"name": "getInvoiceLine", "arguments": "{\"invoiceNo\":\"INV-LOW\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DISPUTABLE\",\"missingEvidence\":[],\"references\":[\"EDI812:55555555-5555-5555-5555-555555555555\"],\"supportingEvidence\":[\"PRICE:SKU-1:2025-12-01\",\"INVOICE:INV-LOW\"],\"reasoning\":\"The invoice unit price is below the effective price master interval, so the deduction is not supported.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "66666666-6666-6666-6666-666666666666": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getPriceMaster", "arguments": "{\"sku\":\"SKU-1\",\"onDate\":\"2026-03-01\"}"},
+                {"name": "getInvoiceLine", "arguments": "{\"invoiceNo\":\"INV-HIGH\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DEDUCTION_STANDS\",\"missingEvidence\":[],\"references\":[\"EDI812:66666666-6666-6666-6666-666666666666\"],\"supportingEvidence\":[\"PRICE:SKU-1:2025-12-01\",\"INVOICE:INV-HIGH\"],\"reasoning\":\"The invoice unit price is above the effective price master interval, so the overbilling supports the deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "77777777-7777-7777-7777-777777777777": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getPriceMaster", "arguments": "{\"sku\":\"SKU-1\",\"onDate\":\"2026-03-01\"}"},
+                {"name": "getInvoiceLine", "arguments": "{\"invoiceNo\":\"INV-MISSING\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"INCONCLUSIVE\",\"missingEvidence\":[\"INVOICE_LINE\"],\"references\":[\"EDI812:77777777-7777-7777-7777-777777777777\"],\"supportingEvidence\":[],\"reasoning\":\"The invoice line could not be found.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "88888888-8888-8888-8888-888888888888": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getPriceMaster", "arguments": "{\"sku\":\"SKU-2\",\"onDate\":\"2026-03-01\"}"},
+                {"name": "getInvoiceLine", "arguments": "{\"invoiceNo\":\"INV-SKU2\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"INCONCLUSIVE\",\"missingEvidence\":[],\"references\":[\"EDI812:88888888-8888-8888-8888-888888888888\"],\"supportingEvidence\":[],\"reasoning\":\"No price interval covers the deduction date for this SKU.\"}"
+            }
+          ]
+        },
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getPriceMaster", "arguments": "{\"sku\":\"SKU-2\",\"onDate\":\"2026-03-01\"}"},
+                {"name": "getInvoiceLine", "arguments": "{\"invoiceNo\":\"INV-SKU2\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"INCONCLUSIVE\",\"missingEvidence\":[],\"references\":[\"EDI812:88888888-8888-8888-8888-888888888888\"],\"supportingEvidence\":[],\"reasoning\":\"No price interval covers the deduction date for this SKU.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "99999999-9999-9999-9999-999999999999": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "searchPromotionAgreements", "arguments": "{\"query\":\"PA-07\"}"},
+                {"name": "getPromotionSettlement", "arguments": "{\"docId\":\"PA-07\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DISPUTABLE\",\"missingEvidence\":[],\"references\":[\"EDI812:99999999-9999-9999-9999-999999999999\"],\"supportingEvidence\":[\"PROMO:PA-07·§3.1\",\"PROMO:PA-07·§3.2\",\"SETTLE:PA-07\"],\"reasoning\":\"The agreement accrued 640 and only 400 was settled; the clauses support the accrual.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "searchPromotionAgreements", "arguments": "{\"query\":\"PA-13\"}"},
+                {"name": "getPromotionSettlement", "arguments": "{\"docId\":\"PA-13\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"INCONCLUSIVE\",\"missingEvidence\":[\"PROMOTION_SETTLEMENT\"],\"references\":[\"EDI812:aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa\"],\"supportingEvidence\":[\"PROMO:PA-13·§3.1\",\"PROMO:PA-13·§3.2\"],\"reasoning\":\"The settlement record is missing.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "cccccccc-cccc-cccc-cccc-cccccccccccc": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "error": "429 rate limited"
+            }
+          ]
+        },
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-RETRY\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-RETRY\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-RETRY\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DISPUTABLE\",\"missingEvidence\":[],\"references\":[\"EDI812:cccccccc-cccc-cccc-cccc-cccccccccccc\"],\"supportingEvidence\":[\"BOL:SHP-RETRY\",\"POD:SHP-RETRY\"],\"reasoning\":\"BOL shipped 20, POD accepted 10; the loss happened with the carrier.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "dddddddd-dddd-dddd-dddd-dddddddddddd": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-CLOSEDSET\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-CLOSEDSET\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-CLOSEDSET\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DEDUCTION_STANDS\",\"missingEvidence\":[],\"references\":[\"EDI812:dddddddd-dddd-dddd-dddd-dddddddddddd\"],\"supportingEvidence\":[\"POD:FORGED\"],\"reasoning\":\"A fabricated evidence id.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"},
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"},
+                {"name": "getBol", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"},
+                {"name": "getPod", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"},
+                {"name": "getAsn", "arguments": "{\"shipmentId\":\"SHP-LIMIT\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DEDUCTION_STANDS\",\"missingEvidence\":[],\"references\":[\"EDI812:eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee\"],\"supportingEvidence\":[\"BOL:SHP-LIMIT\",\"POD:SHP-LIMIT\"],\"reasoning\":\"BOL and POD both show 40 units delivered.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "18181818-1818-1818-1818-181818181818": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "delayMs": 5000
+            }
+          ]
+        }
+      ]
+    },
+    "20202020-2020-2020-2020-202020202020": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {"name": "searchPromotionAgreements", "arguments": "{\"query\":\"PA-13\"}"},
+                {"name": "getPromotionSettlement", "arguments": "{\"docId\":\"PA-13\"}"}
+              ]
+            },
+            {
+              "text": "{\"verdict\":\"DISPUTABLE\",\"missingEvidence\":[],\"references\":[\"EDI812:20202020-2020-2020-2020-202020202020\"],\"supportingEvidence\":[\"PROMO:PA-13·§9.9\",\"SETTLE:PA-13\"],\"reasoning\":\"A fabricated clause number.\"}"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
