@@ -32,3 +32,6 @@ eval/fixtures/tmp/
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Machine-local Maven settings (absolute cache path)
+.mvn/maven.config
