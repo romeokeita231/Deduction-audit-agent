@@ -7,7 +7,7 @@ import com.deductionaudit.persistence.DeductionStore;
 import com.deductionaudit.trace.TraceEntry;
 import com.deductionaudit.trace.TraceRecorder;
 import com.deductionaudit.trace.TraceUnavailableException;
-import com.deductionaudit.web.ApiException;
+import com.deductionaudit.shared.ApiException;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;

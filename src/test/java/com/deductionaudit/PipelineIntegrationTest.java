@@ -109,8 +109,9 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(row(intersection, PRICE_LOW).path("category").asText()).isEqualTo("PRICE_VARIANCE");
         assertThat(ids(intersection)).doesNotContain(UNMAPPED, DISPUTE);
 
-        JsonNode all = getJson("/deductions?status=ALL");
+        JsonNode all = getJson("/deductions");
         assertThat(all.size()).isEqualTo(20);
+        assertThat(ids(all)).contains(EXPIRED);
     }
 
     private static List<String> ids(JsonNode rows) {
@@ -122,7 +123,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
     @Test
     void shortageVerdictCarriesTraceAndDetail() {
         ResponseEntity<String> response = post("/deductions/" + DISPUTE + "/evaluate");
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         JsonNode result = body(response);
         assertThat(result.path("status").asText()).isEqualTo("AWAITING_ACTION");
         assertThat(result.path("attempt").asInt()).isEqualTo(1);
@@ -173,7 +174,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(texts(result.path("verdict").path("missingEvidence"))).containsExactly("POD");
 
         ResponseEntity<String> rerun = post("/deductions/" + NO_POD + "/evaluate");
-        assertThat(rerun.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(rerun.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         JsonNode rerunBody = body(rerun);
         assertThat(rerunBody.path("status").asText()).isEqualTo("AWAITING_ACTION");
         assertThat(rerunBody.path("attempt").asInt()).isEqualTo(2);
@@ -207,7 +208,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
                 "NYC", "MYSTERY", "SHORTAGE");
 
         ResponseEntity<String> rerun = post("/deductions/" + UNMAPPED + "/evaluate");
-        assertThat(rerun.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(rerun.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         JsonNode result = body(rerun);
         assertThat(result.path("status").asText()).isEqualTo("AWAITING_ACTION");
         assertThat(result.path("attempt").asInt()).isEqualTo(1);
@@ -256,20 +257,21 @@ class PipelineIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    void aPolicyGapCanOnlyBeRequeuedWithANewPolicyVersion() {
+    void aPolicyGapOnlyRequeuesWhenTheServedPolicyChanged() {
         post("/deductions/" + PRICE_NO_INTERVAL + "/evaluate");
         String parkedVersion = jdbc.queryForObject(
                 "SELECT parked_policy_version FROM deduction WHERE id = ?::uuid", String.class,
                 PRICE_NO_INTERVAL);
         assertThat(parkedVersion).hasSize(12);
 
-        ResponseEntity<String> unchanged = postWithPolicy("/deductions/" + PRICE_NO_INTERVAL + "/evaluate",
-                parkedVersion);
-        assertThat(unchanged.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(body(unchanged).path("code").asText()).isEqualTo("POLICY_UNCHANGED");
-
-        ResponseEntity<String> changed = postWithPolicy("/deductions/" + PRICE_NO_INTERVAL + "/evaluate",
+        ResponseEntity<String> forged = postWithPolicy("/deductions/" + PRICE_NO_INTERVAL + "/evaluate",
                 "000000000000");
+        assertThat(forged.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(body(forged).path("code").asText()).isEqualTo("POLICY_UNCHANGED");
+
+        jdbc.update("UPDATE deduction SET parked_policy_version = ? WHERE id = ?::uuid",
+                "000000000000", PRICE_NO_INTERVAL);
+        ResponseEntity<String> changed = post("/deductions/" + PRICE_NO_INTERVAL + "/evaluate");
         assertThat(changed.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(body(changed).path("attempt").asInt()).isEqualTo(2);
         assertThat(body(changed).path("parkedReason").asText()).isEqualTo("POLICY_GAP");
@@ -372,17 +374,13 @@ class PipelineIntegrationTest extends IntegrationTestBase {
 
         assertThat(postJson("/deductions/" + DISPUTE + "/close", Map.of("outcome", "ACCEPTED"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(postJson("/deductions/" + DISPUTE + "/result",
-                Map.of("result", "BOGUS", "closedAt", "2026-03-12T00:00:00Z"))
+        assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "BOGUS"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        ResponseEntity<String> incomplete = postJson("/deductions/" + DISPUTE + "/result",
-                Map.of("result", "LOST"));
-        assertThat(incomplete.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(body(incomplete).path("code").asText()).isEqualTo("RESULT_INCOMPLETE");
         ResponseEntity<String> won = postJson("/deductions/" + DISPUTE + "/result",
-                Map.of("result", "WON", "closedAt", "2026-03-12T00:00:00Z"));
+                Map.of("result", "WON"));
         assertThat(won.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(body(won).path("status").asText()).isEqualTo("WON");
+        assertThat(body(won).path("closedAt").asText()).isEqualTo("2026-03-10T06:59:00Z");
         assertThat(jdbc.queryForObject("SELECT result FROM dispute WHERE deduction_id = ?::uuid",
                 String.class, DISPUTE)).isEqualTo("WON");
         assertThat(jdbc.queryForObject("SELECT closed_at FROM dispute WHERE deduction_id = ?::uuid",
@@ -394,8 +392,25 @@ class PipelineIntegrationTest extends IntegrationTestBase {
                 .isEqualTo(HttpStatus.CONFLICT);
         assertThat(postJson("/deductions/" + DISPUTE + "/close", Map.of("outcome", "WRITTEN_OFF"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-        assertThat(postJson("/deductions/" + DISPUTE + "/result",
-                Map.of("result", "LOST", "closedAt", "2026-03-12T00:00:00Z"))
+        assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "LOST"))
+                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void parkIsIdempotentForAnEvidenceGapAndRefusedElsewhere() {
+        post("/deductions/" + NO_POD + "/evaluate");
+        ResponseEntity<String> again = postJson("/deductions/" + NO_POD + "/close",
+                Map.of("outcome", "PARKED"));
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(body(again).path("status").asText()).isEqualTo("PARKED");
+        assertThat(detail(NO_POD).path("parkedReason").asText()).isEqualTo("EVIDENCE_GAP");
+
+        post("/deductions/" + UNMAPPED + "/evaluate");
+        assertThat(postJson("/deductions/" + UNMAPPED + "/close", Map.of("outcome", "PARKED"))
+                .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+
+        evaluate(STANDS);
+        assertThat(postJson("/deductions/" + STANDS + "/close", Map.of("outcome", "PARKED"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     }
 

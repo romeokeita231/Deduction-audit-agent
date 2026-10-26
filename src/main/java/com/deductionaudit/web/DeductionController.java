@@ -8,6 +8,7 @@ import com.deductionaudit.app.EvaluationService;
 import com.deductionaudit.app.QueueService;
 import com.deductionaudit.domain.DeductionCategory;
 import com.deductionaudit.domain.DeductionStatus;
+import com.deductionaudit.shared.ApiException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +16,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -46,7 +45,7 @@ public class DeductionController {
     public record CloseRequest(String outcome) {
     }
 
-    public record ResultRequest(String result, Instant closedAt) {
+    public record ResultRequest(String result) {
     }
 
     public record EvaluationResponse(String deductionId, String status, String parkedReason, Integer attempt,
@@ -56,16 +55,9 @@ public class DeductionController {
     @GetMapping(value = "/deductions", produces = MediaType.APPLICATION_JSON_VALUE)
     public List<QueueService.QueueRow> list(@RequestParam(required = false) String status,
                                             @RequestParam(required = false) String category) {
-        List<DeductionStatus> statuses;
-        if (status == null || status.isBlank() || status.equalsIgnoreCase("ALL")) {
-            statuses = status == null || status.isBlank()
-                    ? List.of(DeductionStatus.NEW, DeductionStatus.PARKED,
-                    DeductionStatus.AWAITING_ACTION)
-                    : List.of(DeductionStatus.values());
-        } else {
-            statuses = Arrays.stream(status.split(",")).map(String::trim)
-                    .map(DeductionStatus::valueOf).toList();
-        }
+        List<DeductionStatus> statuses = status == null || status.isBlank() ? null
+                : Arrays.stream(status.split(",")).map(String::trim)
+                .map(DeductionStatus::valueOf).toList();
         DeductionCategory categoryFilter = category == null || category.isBlank() ? null
                 : DeductionCategory.valueOf(category);
         return queue.queue(statuses, categoryFilter);
@@ -78,16 +70,13 @@ public class DeductionController {
     }
 
     @PostMapping(value = "/deductions/{id}/evaluate", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<EvaluationResponse> evaluate(
-            @PathVariable UUID id,
-            @RequestHeader(value = "X-Policy-Version", required = false) String policyVersion) {
-        EvaluationResult result = evaluations.evaluate(id, policyVersion);
+    public ResponseEntity<EvaluationResponse> evaluate(@PathVariable UUID id) {
+        EvaluationResult result = evaluations.evaluate(id);
         EvaluationResponse body = new EvaluationResponse(result.deductionId().toString(),
                 result.status().name(),
                 result.parkedReason() == null ? null : result.parkedReason().name(),
                 result.attemptNo(), result.verdict());
-        HttpStatus status = result.status() == DeductionStatus.PARKED ? HttpStatus.ACCEPTED : HttpStatus.OK;
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(HttpStatus.ACCEPTED).body(body);
     }
 
     @PostMapping(value = "/deductions/{id}/dispute", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -109,6 +98,6 @@ public class DeductionController {
         if (request == null || request.result() == null) {
             throw ApiException.badRequest("INVALID_RESULT", "result must be WON or LOST");
         }
-        return actions.recordResult(id, request.result(), request.closedAt());
+        return actions.recordResult(id, request.result());
     }
 }

@@ -11,6 +11,7 @@ public record EvaluationProperties(
         Duration modelRoundTimeout,
         Duration toolTimeout,
         int maxToolCalls,
+        int maxModelRounds,
         int maxAttempts,
         Duration retryMinRemaining) {
 
@@ -20,6 +21,7 @@ public record EvaluationProperties(
         modelRoundTimeout = modelRoundTimeout == null ? Duration.ofSeconds(12) : modelRoundTimeout;
         toolTimeout = toolTimeout == null ? Duration.ofSeconds(3) : toolTimeout;
         maxToolCalls = maxToolCalls <= 0 ? 6 : maxToolCalls;
+        maxModelRounds = maxModelRounds <= 0 ? 8 : maxModelRounds;
         maxAttempts = maxAttempts <= 0 ? 2 : maxAttempts;
         retryMinRemaining = retryMinRemaining == null ? Duration.ofSeconds(12) : retryMinRemaining;
     }

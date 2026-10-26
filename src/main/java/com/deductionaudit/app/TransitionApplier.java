@@ -8,7 +8,7 @@ import com.deductionaudit.domain.TransitionContext;
 import com.deductionaudit.domain.TransitionEvent;
 import com.deductionaudit.domain.TransitionOutcome;
 import com.deductionaudit.persistence.DeductionStore;
-import com.deductionaudit.web.ApiException;
+import com.deductionaudit.shared.ApiException;
 import org.springframework.stereotype.Component;
 
 import java.time.Clock;

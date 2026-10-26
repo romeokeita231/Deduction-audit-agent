@@ -16,10 +16,9 @@ import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.tool.DefaultToolCallingManager;
-import org.springframework.ai.model.tool.ToolCallLimitBehavior;
-import org.springframework.ai.model.tool.ToolCallingChatOptions;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.model.tool.ToolExecutionResult;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.support.ToolCallbacks;
 import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.factory.ObjectProvider;
@@ -66,8 +65,6 @@ public class EvaluationAgent {
         this.tools = tools;
         this.modelName = modelName;
         this.toolCallingManager = DefaultToolCallingManager.builder()
-                .maxTotalToolCalls(properties.maxToolCalls())
-                .onLimitExceeded(ToolCallLimitBehavior.RETURN_ERROR_RESPONSE)
                 .resolutionFallbackEnabled(false)
                 .build();
     }
@@ -78,7 +75,8 @@ public class EvaluationAgent {
             throw new InfrastructureFailure("no chat model is configured");
         }
         ToolCallback[] callbacks = callbacks(validator.allowedTools(), run);
-        ToolCallingChatOptions options = ToolCallingChatOptions.builder()
+        OpenAiChatOptions options = OpenAiChatOptions.builder()
+                .model(modelName)
                 .temperature(0.0)
                 .toolCallbacks(Arrays.asList(callbacks))
                 .build();
@@ -89,7 +87,7 @@ public class EvaluationAgent {
 
         ChatResponse response = callRound(model, prompt, run);
         int rounds = 1;
-        while (response.hasToolCalls() && rounds <= properties.maxToolCalls()) {
+        while (response.hasToolCalls() && rounds < properties.maxModelRounds()) {
             ToolExecutionResult execution;
             try {
                 execution = toolCallingManager.executeToolCalls(prompt, response);

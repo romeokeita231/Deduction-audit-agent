@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.UUID;
 
 @Component
@@ -39,7 +40,7 @@ public class DevSeed implements ApplicationRunner {
         map("PACIFIC", "SHORT", "SHORTAGE");
         map("PACIFIC", "PRICE", "PRICE_VARIANCE");
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(ZoneId.of("America/New_York"));
         jdbc.update("INSERT INTO asn (shipment_id, declared_qty, po_no) VALUES (?, ?, ?)",
                 "SHP-1001", 120, "PO-9001");
         jdbc.update("INSERT INTO bol (shipment_id, shipped_qty, carrier) VALUES (?, ?, ?)",
@@ -70,14 +71,10 @@ public class DevSeed implements ApplicationRunner {
                         + "VALUES (?, ?, ?, ?)",
                 "PA-07", new BigDecimal("640.00"), new BigDecimal("480.00"), today.minusDays(5));
 
-        insertDeduction("NORTHWIND", "SHORT", today.minusDays(4), "SHP-1001", null, null,
-                new BigDecimal("480.00"));
-        insertDeduction("NORTHWIND", "SHORT", today.minusDays(40), "SHP-1002", null, null,
-                new BigDecimal("120.00"));
-        insertDeduction("NORTHWIND", "PRICE", today.minusDays(2), null, "SKU-1", "INV-5001",
-                new BigDecimal("50.00"));
-        insertDeduction("PACIFIC", "PROMO", today.minusDays(6), null, "SKU-1", null,
-                new BigDecimal("160.00"));
+        insertDeduction("NORTHWIND", "SHORT", 4, "SHP-1001", null, null, new BigDecimal("480.00"));
+        insertDeduction("NORTHWIND", "SHORT", 40, "SHP-1002", null, null, new BigDecimal("120.00"));
+        insertDeduction("NORTHWIND", "PRICE", 2, null, "SKU-1", "INV-5001", new BigDecimal("50.00"));
+        insertDeduction("PACIFIC", "PROMO", 6, null, "SKU-1", null, new BigDecimal("160.00"));
     }
 
     private void map(String retailerId, String reasonCode, String category) {
@@ -85,9 +82,10 @@ public class DevSeed implements ApplicationRunner {
                 retailerId, reasonCode, category);
     }
 
-    private void insertDeduction(String retailerId, String reasonCode, LocalDate deductionDate,
+    private void insertDeduction(String retailerId, String reasonCode, int daysAgo,
                                  String shipmentId, String sku, String invoiceNo, BigDecimal amount) {
-        int window = store.findRetailer(retailerId).map(DeductionStore.Retailer::windowDays).orElse(30);
+        DeductionStore.Retailer retailer = store.findRetailer(retailerId).orElseThrow();
+        LocalDate deductionDate = LocalDate.now(ZoneId.of(retailer.timeZone())).minusDays(daysAgo);
         UUID id = UUID.randomUUID();
         jdbc.update("""
                         INSERT INTO deduction (id, retailer_id, reason_code, amount, currency, deduction_date,
@@ -96,7 +94,7 @@ public class DevSeed implements ApplicationRunner {
                         VALUES (?, ?, ?, ?, 'USD', ?, now(), ?, 'NEW', ?, ?, ?, 0)
                         """,
                 id, retailerId, reasonCode, amount, deductionDate,
-                com.deductionaudit.domain.WindowArithmetic.windowEndsAt(deductionDate, window),
+                com.deductionaudit.domain.WindowArithmetic.windowEndsAt(deductionDate, retailer.windowDays()),
                 shipmentId, sku, invoiceNo);
     }
 }

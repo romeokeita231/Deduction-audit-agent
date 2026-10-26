@@ -28,6 +28,7 @@ app:
     model-round-timeout: 12s
     tool-timeout: 3s
     max-tool-calls: 6
+    max-model-rounds: 8
     max-attempts: 2
     retry-min-remaining: 12s
   expiry:

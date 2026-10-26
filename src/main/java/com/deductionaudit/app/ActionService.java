@@ -2,20 +2,19 @@ package com.deductionaudit.app;
 
 import com.deductionaudit.domain.Deduction;
 import com.deductionaudit.domain.DeductionStatus;
+import com.deductionaudit.domain.ParkedReason;
 import com.deductionaudit.domain.TransitionContext;
 import com.deductionaudit.domain.TransitionEvent;
 import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.persistence.DeductionStore;
-import com.deductionaudit.web.ApiException;
-import com.deductionaudit.web.WindowExpiredException;
+import com.deductionaudit.shared.ApiException;
+import com.deductionaudit.shared.WindowExpiredException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -69,14 +68,27 @@ public class ActionService {
                     TransitionContext.empty(), null);
             return new ActionOutcome(writtenOff.id(), writtenOff.status(), null, null, null, null);
         }
-        throw ApiException.badRequest("INVALID_OUTCOME", "outcome must be ACCEPTED or WRITTEN_OFF");
+        if ("PARKED".equals(outcome)) {
+            return park(id, deduction);
+        }
+        throw ApiException.badRequest("INVALID_OUTCOME",
+                "outcome must be ACCEPTED, WRITTEN_OFF or PARKED");
+    }
+
+    private ActionOutcome park(UUID id, Deduction deduction) {
+        if (deduction.status() == DeductionStatus.PARKED
+                && (deduction.parkedReason() == ParkedReason.EVIDENCE_GAP
+                || deduction.parkedReason() == ParkedReason.POLICY_GAP)) {
+            return new ActionOutcome(deduction.id(), deduction.status(), null, null, null, null);
+        }
+        VerdictRecord verdict = requireAwaitingAction(deduction);
+        Deduction parked = transitions.apply(deduction, TransitionEvent.PARK_FOR_HUMAN,
+                TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()), null);
+        return new ActionOutcome(parked.id(), parked.status(), null, null, null, null);
     }
 
     @Transactional
-    public ActionOutcome recordResult(UUID id, String result, Instant closedAt) {
-        if (closedAt == null) {
-            throw ApiException.badRequest("RESULT_INCOMPLETE", "closedAt is required");
-        }
+    public ActionOutcome recordResult(UUID id, String result) {
         Deduction deduction = load(id);
         if (deduction.status() != DeductionStatus.DISPUTED) {
             throw ApiException.conflict("ILLEGAL_TRANSITION",
@@ -84,9 +96,10 @@ public class ActionService {
         }
         var dispute = store.findDispute(id)
                 .orElseThrow(() -> ApiException.conflict("NO_DISPUTE", "a dispute record is required"));
+        Instant closedAt = clock.instant();
         store.closeDispute(id, closedAt, result);
         Deduction resolved = transitions.apply(deduction, TransitionEvent.RECORD_RESULT,
-                new TransitionContext(false, null, List.of(), 0, Duration.ZERO, true, true, result), null);
+                TransitionContext.forResult(result), null);
         return new ActionOutcome(resolved.id(), resolved.status(), dispute.id().toString(),
                 dispute.openedAt(), closedAt, result);
     }

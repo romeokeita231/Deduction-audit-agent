@@ -41,15 +41,19 @@ class StateMachineTest {
     }
 
     @Test
-    void retryNeedsOnePriorAttemptAndMoreThanTwelveSeconds() {
+    void retryNeedsOnePriorAttemptAndMoreThanTheConfiguredRemainder() {
+        Duration minimum = Duration.ofSeconds(12);
         assertThat(transition(DeductionStatus.EVALUATING, TransitionEvent.RETRY_EVALUATION,
-                new TransitionContext(false, null, List.of(), 0, Duration.ofSeconds(13), false, false, null)))
+                TransitionContext.forRetry(0, Duration.ofSeconds(13), minimum)))
                 .isEqualTo(TransitionOutcome.allowed(DeductionStatus.NEW));
         assertThat(transition(DeductionStatus.EVALUATING, TransitionEvent.RETRY_EVALUATION,
-                new TransitionContext(false, null, List.of(), 0, Duration.ofSeconds(12), false, false, null)))
+                TransitionContext.forRetry(0, Duration.ofSeconds(12), minimum)))
                 .isInstanceOf(TransitionOutcome.Rejected.class);
         assertThat(transition(DeductionStatus.EVALUATING, TransitionEvent.RETRY_EVALUATION,
-                new TransitionContext(false, null, List.of(), 1, Duration.ofSeconds(40), false, false, null)))
+                TransitionContext.forRetry(1, Duration.ofSeconds(40), minimum)))
+                .isInstanceOf(TransitionOutcome.Rejected.class);
+        assertThat(transition(DeductionStatus.EVALUATING, TransitionEvent.RETRY_EVALUATION,
+                TransitionContext.forRetry(0, Duration.ofSeconds(20), Duration.ofSeconds(30))))
                 .isInstanceOf(TransitionOutcome.Rejected.class);
     }
 
@@ -91,29 +95,58 @@ class StateMachineTest {
     }
 
     @Test
-    void parkedReasonSplitsOnMissingEvidence() {
+    void parkForHumanIsOnlyForInconclusive() {
         assertThat(transition(DeductionStatus.AWAITING_ACTION, TransitionEvent.PARK_FOR_HUMAN,
                 TransitionContext.forVerdict(VerdictValue.INCONCLUSIVE, List.of(MissingEvidence.POD))))
                 .isEqualTo(TransitionOutcome.allowed(DeductionStatus.PARKED, ParkedReason.EVIDENCE_GAP));
         assertThat(transition(DeductionStatus.AWAITING_ACTION, TransitionEvent.PARK_FOR_HUMAN,
                 TransitionContext.forVerdict(VerdictValue.INCONCLUSIVE, List.of())))
                 .isEqualTo(TransitionOutcome.allowed(DeductionStatus.PARKED, ParkedReason.POLICY_GAP));
+        for (VerdictValue verdict : List.of(VerdictValue.DEDUCTION_STANDS, VerdictValue.DISPUTABLE)) {
+            for (MissingEvidence ignored : MissingEvidence.values()) {
+                assertThat(transition(DeductionStatus.AWAITING_ACTION, TransitionEvent.PARK_FOR_HUMAN,
+                        TransitionContext.forVerdict(verdict, List.of(ignored))))
+                        .isEqualTo(new TransitionOutcome.Rejected("VERDICT_MISMATCH",
+                                "PARK_FOR_HUMAN is not allowed for verdict " + verdict));
+            }
+            assertThat(transition(DeductionStatus.AWAITING_ACTION, TransitionEvent.PARK_FOR_HUMAN,
+                    TransitionContext.forVerdict(verdict, List.of())))
+                    .isEqualTo(new TransitionOutcome.Rejected("VERDICT_MISMATCH",
+                            "PARK_FOR_HUMAN is not allowed for verdict " + verdict));
+        }
     }
 
     @Test
-    void resultsNeedDisputeRecordAndClosedAtAndAValidResult() {
+    void parkedReasonIsAWholeDomainAnswer() {
+        assertThat(ParkedReason.forInconclusive(VerdictValue.DEDUCTION_STANDS, List.of()))
+                .isNull();
+        assertThat(ParkedReason.forInconclusive(VerdictValue.DISPUTABLE, List.of(MissingEvidence.BOL)))
+                .isNull();
+        assertThat(ParkedReason.forInconclusive(VerdictValue.INCONCLUSIVE, List.of()))
+                .isEqualTo(ParkedReason.POLICY_GAP);
+        assertThat(ParkedReason.forInconclusive(VerdictValue.INCONCLUSIVE, null))
+                .isEqualTo(ParkedReason.POLICY_GAP);
+        assertThat(ParkedReason.forInconclusive(VerdictValue.INCONCLUSIVE, List.of(MissingEvidence.POD)))
+                .isEqualTo(ParkedReason.EVIDENCE_GAP);
+        assertThat(ParkedReason.forInconclusive(VerdictValue.INCONCLUSIVE,
+                List.of(MissingEvidence.POD, MissingEvidence.BOL)))
+                .isEqualTo(ParkedReason.EVIDENCE_GAP);
+    }
+
+    @Test
+    void resultsNeedDisputeRecordAndAValidResult() {
         assertThat(transition(DeductionStatus.DISPUTED, TransitionEvent.RECORD_RESULT,
-                new TransitionContext(false, null, List.of(), 0, Duration.ZERO, false, true, "WON")))
+                TransitionContext.forVerdict(VerdictValue.DEDUCTION_STANDS, List.of())))
                 .isEqualTo(new TransitionOutcome.Rejected("NO_DISPUTE", "a dispute record is required"));
         assertThat(transition(DeductionStatus.DISPUTED, TransitionEvent.RECORD_RESULT,
-                new TransitionContext(false, null, List.of(), 0, Duration.ZERO, true, false, "WON")))
-                .isEqualTo(new TransitionOutcome.Rejected("RESULT_INCOMPLETE", "closedAt is required"));
-        assertThat(transition(DeductionStatus.DISPUTED, TransitionEvent.RECORD_RESULT,
-                new TransitionContext(false, null, List.of(), 0, Duration.ZERO, true, true, "MAYBE")))
+                TransitionContext.forResult("MAYBE")))
                 .isEqualTo(new TransitionOutcome.Rejected("INVALID_RESULT", "result must be WON or LOST"));
         assertThat(transition(DeductionStatus.DISPUTED, TransitionEvent.RECORD_RESULT,
-                new TransitionContext(false, null, List.of(), 0, Duration.ZERO, true, true, "LOST")))
+                TransitionContext.forResult("LOST")))
                 .isEqualTo(TransitionOutcome.allowed(DeductionStatus.LOST));
+        assertThat(transition(DeductionStatus.DISPUTED, TransitionEvent.RECORD_RESULT,
+                TransitionContext.forResult("WON")))
+                .isEqualTo(TransitionOutcome.allowed(DeductionStatus.WON));
     }
 
     @Test

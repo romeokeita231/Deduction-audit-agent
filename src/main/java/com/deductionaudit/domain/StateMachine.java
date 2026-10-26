@@ -1,10 +1,6 @@
 package com.deductionaudit.domain;
 
-import java.time.Duration;
-
 public final class StateMachine {
-
-    private static final Duration RETRY_MIN_REMAINING = Duration.ofSeconds(12);
 
     private StateMachine() {
     }
@@ -32,10 +28,12 @@ public final class StateMachine {
             case RETRY_EVALUATION -> from == DeductionStatus.EVALUATING
                     && ctx.priorAttempts() < 1
                     && ctx.remainingBudget() != null
-                    && ctx.remainingBudget().compareTo(RETRY_MIN_REMAINING) > 0
+                    && ctx.retryMinRemaining() != null
+                    && ctx.remainingBudget().compareTo(ctx.retryMinRemaining()) > 0
                     ? TransitionOutcome.allowed(DeductionStatus.NEW)
                     : TransitionOutcome.rejected("RETRY_NOT_ALLOWED",
-                    "retry needs one prior attempt and more than 12s of budget left");
+                    "retry needs one prior attempt and more than " + ctx.retryMinRemaining()
+                            + " of budget left");
             case FAIL_EVALUATION -> from == DeductionStatus.EVALUATING
                     ? TransitionOutcome.allowed(DeductionStatus.PARKED, ParkedReason.EVAL_FAILED)
                     : illegal(from, event);
@@ -79,12 +77,10 @@ public final class StateMachine {
     }
 
     private static TransitionOutcome parkForHuman(TransitionContext ctx) {
-        if (ctx.verdict() != VerdictValue.INCONCLUSIVE) {
+        ParkedReason reason = ParkedReason.forInconclusive(ctx.verdict(), ctx.missingEvidence());
+        if (reason == null) {
             return verdictMismatch(TransitionEvent.PARK_FOR_HUMAN, ctx.verdict());
         }
-        ParkedReason reason = ctx.missingEvidence().isEmpty()
-                ? ParkedReason.POLICY_GAP
-                : ParkedReason.EVIDENCE_GAP;
         return TransitionOutcome.allowed(DeductionStatus.PARKED, reason);
     }
 
@@ -98,9 +94,6 @@ public final class StateMachine {
         String requested = ctx.requestedResult();
         if (requested == null || (!requested.equals("WON") && !requested.equals("LOST"))) {
             return TransitionOutcome.rejected("INVALID_RESULT", "result must be WON or LOST");
-        }
-        if (!ctx.closedAtPresent()) {
-            return TransitionOutcome.rejected("RESULT_INCOMPLETE", "closedAt is required");
         }
         return TransitionOutcome.allowed(DeductionStatus.valueOf(requested));
     }

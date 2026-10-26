@@ -39,7 +39,7 @@
 | `AWAITING_ACTION` | `DISPUTED` | AR 确认提交（文书已导出，系统不代发） | Verdict 为 `DISPUTABLE` |
 | `AWAITING_ACTION` | `ACCEPTED` | AR 接受扣款 | Verdict 为 `DEDUCTION_STANDS` |
 | `AWAITING_ACTION` | `WRITTEN_OFF` | AR 放弃 | 任意 Verdict |
-| `AWAITING_ACTION` | `PARKED` | 转人工 | Verdict 为 `INCONCLUSIVE`。**证据不足不能直接提交争议** |
+| `AWAITING_ACTION` | `PARKED` | 服务端自动停靠 | Verdict 为 `INCONCLUSIVE` 时自动停靠。**证据不足不能直接提交争议** |
 | `AWAITING_ACTION` | `EXPIRED` | 定时扫描 | `now > windowEndsAt` |
 | `DISPUTED` | `WON` / `LOST` | 录入零售商议结果 | |
 

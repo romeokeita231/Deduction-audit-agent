@@ -6,6 +6,7 @@ import com.deductionaudit.app.EvaluationService;
 import com.deductionaudit.app.QueueService;
 import com.deductionaudit.domain.DeductionCategory;
 import com.deductionaudit.domain.DeductionStatus;
+import com.deductionaudit.shared.ApiException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,8 +16,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.Clock;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -28,22 +27,19 @@ public class UiController {
     private final DetailService details;
     private final EvaluationService evaluations;
     private final ActionService actions;
-    private final Clock clock;
 
     public UiController(QueueService queue, DetailService details, EvaluationService evaluations,
-                        ActionService actions, Clock clock) {
+                        ActionService actions) {
         this.queue = queue;
         this.details = details;
         this.evaluations = evaluations;
         this.actions = actions;
-        this.clock = clock;
     }
 
     @GetMapping(value = "/queue", produces = MediaType.TEXT_HTML_VALUE)
     public String queue(@RequestParam(required = false) String status,
                         @RequestParam(required = false) String category, Model model) {
-        List<DeductionStatus> statuses = status == null || status.isBlank()
-                ? List.of(DeductionStatus.NEW, DeductionStatus.PARKED, DeductionStatus.AWAITING_ACTION)
+        List<DeductionStatus> statuses = status == null || status.isBlank() ? null
                 : Arrays.stream(status.split(",")).map(String::trim).map(DeductionStatus::valueOf).toList();
         DeductionCategory categoryFilter = category == null || category.isBlank() ? null
                 : DeductionCategory.valueOf(category);
@@ -65,11 +61,9 @@ public class UiController {
     }
 
     @PostMapping(value = "/deductions/{id}/evaluate", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public String evaluate(@PathVariable UUID id,
-                           @RequestParam(required = false) String policyVersion,
-                           RedirectAttributes redirect) {
+    public String evaluate(@PathVariable UUID id, RedirectAttributes redirect) {
         try {
-            evaluations.evaluate(id, policyVersion);
+            evaluations.evaluate(id);
         } catch (ApiException e) {
             redirect.addFlashAttribute("error", e.code() + ": " + e.getMessage());
         }
@@ -102,7 +96,7 @@ public class UiController {
     @PostMapping(value = "/deductions/{id}/result", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public String result(@PathVariable UUID id, @RequestParam String result, RedirectAttributes redirect) {
         try {
-            actions.recordResult(id, result, Instant.now(clock));
+            actions.recordResult(id, result);
         } catch (ApiException e) {
             redirect.addFlashAttribute("error", e.code() + ": " + e.getMessage());
         }

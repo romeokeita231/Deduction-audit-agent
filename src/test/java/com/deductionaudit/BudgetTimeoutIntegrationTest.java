@@ -58,7 +58,7 @@ class BudgetTimeoutIntegrationTest extends IntegrationTestBase {
             for (Future<Integer> future : futures) {
                 statuses.add(future.get());
             }
-            assertThat(statuses).containsExactlyInAnyOrder(200, 409);
+            assertThat(statuses).containsExactlyInAnyOrder(202, 409);
             assertThat(jdbc.queryForObject(
                     "SELECT count(*) FROM evaluation_attempt WHERE deduction_id = ?::uuid",
                     Integer.class, DISPUTE)).isEqualTo(1);

@@ -9,20 +9,30 @@ public record TransitionContext(
         List<MissingEvidence> missingEvidence,
         int priorAttempts,
         Duration remainingBudget,
+        Duration retryMinRemaining,
         boolean hasDisputeRecord,
-        boolean closedAtPresent,
         String requestedResult) {
 
     public static TransitionContext empty() {
-        return new TransitionContext(false, null, List.of(), 0, Duration.ZERO, false, false, null);
+        return new TransitionContext(false, null, List.of(), 0, Duration.ZERO, Duration.ZERO, false, null);
     }
 
     public static TransitionContext atWindow(boolean expired) {
-        return new TransitionContext(expired, null, List.of(), 0, Duration.ZERO, false, false, null);
+        return new TransitionContext(expired, null, List.of(), 0, Duration.ZERO, Duration.ZERO, false, null);
     }
 
     public static TransitionContext forVerdict(VerdictValue verdict, List<MissingEvidence> missingEvidence) {
         return new TransitionContext(false, verdict, missingEvidence == null ? List.of() : missingEvidence,
-                0, Duration.ZERO, false, false, null);
+                0, Duration.ZERO, Duration.ZERO, false, null);
+    }
+
+    public static TransitionContext forRetry(int priorAttempts, Duration remainingBudget,
+                                             Duration retryMinRemaining) {
+        return new TransitionContext(false, null, List.of(), priorAttempts, remainingBudget,
+                retryMinRemaining, false, null);
+    }
+
+    public static TransitionContext forResult(String result) {
+        return new TransitionContext(false, null, List.of(), 0, Duration.ZERO, Duration.ZERO, true, result);
     }
 }

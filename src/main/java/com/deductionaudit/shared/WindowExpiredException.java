@@ -1,4 +1,4 @@
-package com.deductionaudit.web;
+package com.deductionaudit.shared;
 
 public class WindowExpiredException extends ApiException {
 

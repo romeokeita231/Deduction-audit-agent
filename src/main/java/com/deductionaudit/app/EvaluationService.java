@@ -3,6 +3,7 @@ package com.deductionaudit.app;
 import com.deductionaudit.agent.EvaluationAgent;
 import com.deductionaudit.agent.EvaluationAgent.InfrastructureFailure;
 import com.deductionaudit.agent.EvaluationRun;
+import com.deductionaudit.agent.PolicyProvider;
 import com.deductionaudit.agent.validators.DeductionValidator;
 import com.deductionaudit.agent.validators.ValidatorRegistry;
 import com.deductionaudit.config.EvaluationProperties;
@@ -16,8 +17,8 @@ import com.deductionaudit.domain.TransitionEvent;
 import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.persistence.DeductionStore;
-import com.deductionaudit.web.ApiException;
-import com.deductionaudit.web.WindowExpiredException;
+import com.deductionaudit.shared.ApiException;
+import com.deductionaudit.shared.WindowExpiredException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,10 +45,12 @@ public class EvaluationService {
     private final ExecutorService executor;
     private final Clock clock;
     private final TransitionApplier transitions;
+    private final PolicyProvider policy;
 
     public EvaluationService(DeductionStore store, WindowService windows, EvaluationAgent agent,
                              ValidatorRegistry validators, EvaluationProperties properties,
-                             ExecutorService executor, Clock clock, TransitionApplier transitions) {
+                             ExecutorService executor, Clock clock, TransitionApplier transitions,
+                             PolicyProvider policy) {
         this.store = store;
         this.windows = windows;
         this.agent = agent;
@@ -56,10 +59,11 @@ public class EvaluationService {
         this.executor = executor;
         this.clock = clock;
         this.transitions = transitions;
+        this.policy = policy;
     }
 
     @Transactional(noRollbackFor = WindowExpiredException.class)
-    public EvaluationResult evaluate(UUID id, String requestedPolicyVersion) {
+    public EvaluationResult evaluate(UUID id) {
         store.lockForUpdate(id);
         Deduction deduction = store.find(id).orElseThrow(() -> ApiException.notFound("deduction not found"));
         deductable(deduction, windows.timeZoneOf(deduction));
@@ -75,7 +79,7 @@ public class EvaluationService {
             throw ApiException.conflict("ILLEGAL_TRANSITION", "the deduction already has a verdict");
         }
         if (deduction.status() == DeductionStatus.PARKED) {
-            guardRequeue(deduction, requestedPolicyVersion);
+            guardRequeue(deduction);
             deduction = transitions.apply(deduction, TransitionEvent.REQUEUE, TransitionContext.empty(), null);
         }
         if (deduction.status() != DeductionStatus.NEW) {
@@ -110,8 +114,8 @@ public class EvaluationService {
                         TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()), attemptNo);
                 if (verdict.verdict() == VerdictValue.INCONCLUSIVE) {
                     after = transitions.apply(after, TransitionEvent.PARK_FOR_HUMAN,
-                            new TransitionContext(false, verdict.verdict(), verdict.missingEvidence(),
-                                    attemptNo - 1, Duration.ZERO, false, false, null), attemptNo);
+                            TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()),
+                            attemptNo);
                 }
                 return new EvaluationResult(after.id(), after.status(), after.parkedReason(), attemptNo, record);
             } catch (RuntimeException failure) {
@@ -126,8 +130,8 @@ public class EvaluationService {
                         && attemptNo < properties.maxAttempts()
                         && remaining.compareTo(properties.retryMinRemaining()) > 0) {
                     deduction = transitions.apply(deduction, TransitionEvent.RETRY_EVALUATION,
-                            new TransitionContext(false, null, List.of(), attemptNo - 1, remaining,
-                                    false, false, null), attemptNo);
+                            TransitionContext.forRetry(attemptNo - 1, remaining,
+                                    properties.retryMinRemaining()), attemptNo);
                     attemptNo = attemptNo + 1;
                     store.startAttempt(deduction.id(), attemptNo, clock.instant());
                     deduction = transitions.apply(deduction, TransitionEvent.START_EVALUATION,
@@ -141,15 +145,14 @@ public class EvaluationService {
         }
     }
 
-    private void guardRequeue(Deduction deduction, String requestedPolicyVersion) {
+    private void guardRequeue(Deduction deduction) {
         if (deduction.parkedReason() == ParkedReason.UNMAPPED_CODE
                 && store.resolveCategory(deduction.retailerId(), deduction.reasonCode()).isEmpty()) {
             throw ApiException.conflict("UNMAPPED_CODE",
                     "the reason code is still unmapped for this retailer");
         }
         if (deduction.parkedReason() == ParkedReason.POLICY_GAP
-                && (requestedPolicyVersion == null
-                || requestedPolicyVersion.equals(deduction.parkedPolicyVersion()))) {
+                && policy.version().equals(deduction.parkedPolicyVersion())) {
             throw ApiException.conflict("POLICY_UNCHANGED",
                     "the policy has not changed since this deduction was parked");
         }
