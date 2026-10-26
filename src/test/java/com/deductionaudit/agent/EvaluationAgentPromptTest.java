@@ -89,5 +89,7 @@ class EvaluationAgentPromptTest {
         assertThat(agent.promptVersion(shortage)).isEqualTo(shortageVersion);
         assertThat(shortageVersion).hasSize(12);
         assertThat(priceVersion).hasSize(12);
+        assertThat(agent.promptVersion(shortage))
+                .isNotEqualTo(PolicyProvider.sha256(shortage.systemPrompt(policy.text())).substring(0, 12));
     }
 }
