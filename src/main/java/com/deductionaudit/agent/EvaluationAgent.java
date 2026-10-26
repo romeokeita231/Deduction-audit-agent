@@ -257,7 +257,7 @@ public class EvaluationAgent {
         return PolicyProvider.sha256(systemMessage(validator)).substring(0, 12);
     }
 
-    private String systemMessage(DeductionValidator validator) {
+    String systemMessage(DeductionValidator validator) {
         return validator.systemPrompt(policy.text()) + OUTPUT_CONTRACT;
     }
 
