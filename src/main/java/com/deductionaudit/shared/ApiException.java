@@ -30,4 +30,8 @@ public class ApiException extends RuntimeException {
     public static ApiException badRequest(String code, String message) {
         return new ApiException(400, code, message);
     }
+
+    public static ApiException internal(String code, String message) {
+        return new ApiException(500, code, message);
+    }
 }

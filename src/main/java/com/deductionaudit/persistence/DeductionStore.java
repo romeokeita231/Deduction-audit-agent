@@ -7,10 +7,13 @@ import com.deductionaudit.domain.ParkedReason;
 import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.domain.MissingEvidence;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Array;
 import java.sql.ResultSet;
@@ -26,6 +29,8 @@ import java.util.UUID;
 
 @Repository
 public class DeductionStore {
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     private final JdbcTemplate jdbc;
 
@@ -46,6 +51,14 @@ public class DeductionStore {
 
     public record DisputeRow(UUID id, UUID deductionId, Instant openedAt, Instant closedAt,
                              String result, String submittedBy, String note) {
+    }
+
+    public record DisputeDocumentRow(UUID disputeId, UUID deductionId, int attemptNo, JsonNode claim,
+                                     String narrative, JsonNode digest, int evidenceVersion,
+                                     String promptVersion, String model, Instant draftedAt) {
+    }
+
+    public record EvidenceVersion(int version, Instant updatedAt) {
     }
 
     public Optional<Deduction> find(UUID id) {
@@ -249,6 +262,40 @@ public class DeductionStore {
                 toOffset(closedAt), result, deductionId);
     }
 
+    public void insertDisputeDocument(UUID disputeId, UUID deductionId, int attemptNo, JsonNode claim,
+                                      String narrative, JsonNode digest, int evidenceVersion,
+                                      String promptVersion, String model, Instant draftedAt) {
+        jdbc.update("""
+                        INSERT INTO dispute_document (dispute_id, deduction_id, attempt_no, claim, narrative,
+                                                      digest, evidence_version, prompt_version, model, drafted_at)
+                        VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?)
+                        """,
+                disputeId, deductionId, attemptNo, json(claim), narrative, json(digest),
+                evidenceVersion, promptVersion, model, toOffset(draftedAt));
+    }
+
+    public Optional<DisputeDocumentRow> findDisputeDocument(UUID deductionId) {
+        List<DisputeDocumentRow> rows = jdbc.query(
+                "SELECT * FROM dispute_document WHERE deduction_id = ?",
+                (rs, i) -> new DisputeDocumentRow(
+                        rs.getObject("dispute_id", UUID.class),
+                        rs.getObject("deduction_id", UUID.class),
+                        rs.getInt("attempt_no"),
+                        jsonNode(rs, "claim"),
+                        rs.getString("narrative"),
+                        jsonNode(rs, "digest"),
+                        rs.getInt("evidence_version"),
+                        rs.getString("prompt_version"),
+                        rs.getString("model"),
+                        instant(rs, "drafted_at")), deductionId);
+        return rows.stream().findFirst();
+    }
+
+    public EvidenceVersion evidenceVersion() {
+        return jdbc.queryForObject("SELECT version, updated_at FROM evidence_version WHERE id = 1",
+                (rs, i) -> new EvidenceVersion(rs.getInt("version"), instant(rs, "updated_at")));
+    }
+
     private RowMapper<Deduction> deductionMapper() {
         return (rs, i) -> new Deduction(
                 rs.getObject("id", UUID.class),
@@ -328,5 +375,22 @@ public class DeductionStore {
     private static Instant instant(ResultSet rs, String column) throws SQLException {
         OffsetDateTime value = rs.getObject(column, OffsetDateTime.class);
         return value == null ? null : value.toInstant();
+    }
+
+    private static String json(JsonNode node) {
+        try {
+            return JSON.writeValueAsString(node);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("json payload could not be serialized", e);
+        }
+    }
+
+    private static JsonNode jsonNode(ResultSet rs, String column) throws SQLException {
+        String value = rs.getString(column);
+        try {
+            return JSON.readTree(value);
+        } catch (IOException e) {
+            throw new SQLException("column " + column + " does not hold json", e);
+        }
     }
 }
