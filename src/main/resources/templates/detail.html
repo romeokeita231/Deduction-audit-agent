@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="'Deduction ' + ${detail.id}">Deduction</title>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --ink: #111418;
+            --muted: #6b7280;
+            --line: #e5e7eb;
+            --bg: #ffffff;
+            --accent: #1d4ed8;
+            --warn: #b45309;
+            --good: #047857;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.45;
+        }
+        main { max-width: 920px; margin: 0 auto; padding: 32px 20px 64px; }
+        h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0 0 4px; }
+        h2 { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 32px 0 8px; }
+        .head { color: var(--muted); margin: 0 0 24px; }
+        dl { display: grid; grid-template-columns: 160px 1fr; gap: 6px 16px; margin: 0; }
+        dt { color: var(--muted); }
+        dd { margin: 0; font-variant-numeric: tabular-nums; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        th { color: var(--muted); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .verdict { font-size: 18px; font-weight: 600; }
+        .verdict.DISPUTABLE { color: var(--accent); }
+        .verdict.DEDUCTION_STANDS { color: var(--good); }
+        .verdict.INCONCLUSIVE { color: var(--warn); }
+        .badge { display: inline-block; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--muted); }
+        code { font-size: 12px; }
+        .error { border: 1px solid var(--warn); color: var(--warn); padding: 10px 12px; border-radius: 8px; margin-bottom: 16px; }
+        form { display: inline; }
+        button { font: inherit; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; margin-right: 8px; }
+        button:hover { border-color: var(--accent); color: var(--accent); }
+        .actions { margin-top: 24px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .muted { color: var(--muted); }
+        .trace-request { white-space: pre-wrap; word-break: break-word; font-size: 12px; color: var(--muted); }
+    </style>
+</head>
+<body>
+<main>
+    <p><a href="/queue">&larr; Queue</a></p>
+    <h1 th:text="${detail.retailerName}">Retailer</h1>
+    <p class="head" th:text="${detail.reasonCode} + ' · ' + ${detail.category}">CODE</p>
+    <div class="error" th:if="${error}" th:text="${error}">error</div>
+
+    <dl>
+        <dt>Status</dt><dd><span class="badge" th:text="${detail.status}">NEW</span>
+        <span th:if="${detail.parkedReason}" th:text="' · ' + ${detail.parkedReason}">PARKED</span></dd>
+        <dt>Amount</dt><dd th:text="${detail.amount} + ' ' + ${detail.currency}">0.00 USD</dd>
+        <dt>Deduction date</dt><dd th:text="${detail.deductionDate}">2026-01-01</dd>
+        <dt>Window ends</dt><dd th:text="${detail.windowEndsAt}">2026-01-31</dd>
+        <dt>Days remaining</dt><dd th:text="${detail.daysRemaining != null} ? ${detail.daysRemaining} : 'paused'">0</dd>
+        <dt>EDI 812</dt><dd><code th:text="'EDI812:' + ${detail.id}">EDI812:</code></dd>
+    </dl>
+
+    <h2>Verdict</h2>
+    <div th:if="${detail.evaluation == null}" class="muted">No verdict for this attempt.</div>
+    <div th:if="${detail.evaluation != null}">
+        <p class="verdict" th:classappend="${detail.evaluation.verdict}" th:text="${detail.evaluation.verdict}">VERDICT</p>
+        <dl>
+            <dt>Model</dt><dd th:text="${detail.evaluation.model}">model</dd>
+            <dt>Prompt / policy</dt><dd th:text="${detail.evaluation.promptVersion} + ' / ' + ${detail.evaluation.policyVersion}">v</dd>
+            <dt>Mapping version</dt><dd th:text="${detail.evaluation.mappingVersion}">1</dd>
+            <dt>Evaluated at</dt><dd th:text="${detail.evaluation.evaluatedAt}">now</dd>
+            <dt>Missing evidence</dt><dd th:text="${detail.evaluation.missingEvidence.isEmpty()} ? 'none' : ${detail.evaluation.missingEvidence}">none</dd>
+            <dt>References</dt><dd th:text="${detail.evaluation.references.isEmpty()} ? 'none' : ${detail.evaluation.references}">none</dd>
+            <dt>Supporting evidence</dt><dd th:text="${detail.evaluation.supportingEvidence.isEmpty()} ? 'none' : ${detail.evaluation.supportingEvidence}">none</dd>
+            <dt>Reasoning</dt><dd th:text="${detail.evaluation.reasoning}">reasoning</dd>
+        </dl>
+    </div>
+
+    <h2>Actions</h2>
+    <div class="actions">
+        <form th:if="${detail.status == 'NEW' or detail.status == 'PARKED'}"
+              th:action="@{/deductions/{id}/evaluate(id=${detail.id})}" method="post">
+            <button type="submit">Evaluate</button>
+        </form>
+        <form th:if="${detail.status == 'AWAITING_ACTION'}" th:action="@{/deductions/{id}/dispute(id=${detail.id})}" method="post">
+            <button type="submit">Dispute</button>
+        </form>
+        <form th:if="${detail.status == 'AWAITING_ACTION'}" th:action="@{/deductions/{id}/close(id=${detail.id})}" method="post">
+            <input type="hidden" name="outcome" value="ACCEPTED">
+            <button type="submit">Accept</button>
+        </form>
+        <form th:if="${detail.status == 'AWAITING_ACTION' or detail.status == 'PARKED'}"
+              th:action="@{/deductions/{id}/close(id=${detail.id})}" method="post">
+            <input type="hidden" name="outcome" value="WRITTEN_OFF">
+            <button type="submit">Write off</button>
+        </form>
+        <form th:if="${detail.status == 'DISPUTED'}" th:action="@{/deductions/{id}/result(id=${detail.id})}" method="post">
+            <input type="hidden" name="result" value="WON">
+            <button type="submit">Record won</button>
+        </form>
+        <form th:if="${detail.status == 'DISPUTED'}" th:action="@{/deductions/{id}/result(id=${detail.id})}" method="post">
+            <input type="hidden" name="result" value="LOST">
+            <button type="submit">Record lost</button>
+        </form>
+    </div>
+
+    <h2>Attempts</h2>
+    <table>
+        <thead><tr><th class="num">Attempt</th><th>Started</th><th>Ended</th><th class="num">Duration ms</th><th>Outcome</th><th class="num">Tool calls</th></tr></thead>
+        <tbody>
+        <tr th:each="a : ${detail.attempts}">
+            <td class="num"><a th:href="@{/deductions/{id}(id=${detail.id}, attempt=${a.attempt})}" th:text="${a.attempt}">1</a></td>
+            <td th:text="${a.startedAt}">start</td>
+            <td th:text="${a.endedAt} ?: '—'">end</td>
+            <td class="num" th:text="${a.durationMs} ?: '—'">0</td>
+            <td th:text="${a.outcome} ?: '—'">—</td>
+            <td class="num" th:text="${a.toolCallCount}">0</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(detail.attempts)}"><td colspan="6" class="muted">No attempts yet.</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Trace</h2>
+    <p class="muted" th:if="${detail.traceUnavailable}">Trace unavailable for this attempt: the trace store could not be read.</p>
+    <p class="muted" th:if="${#lists.isEmpty(detail.trace) and !detail.traceUnavailable}">No trace events recorded for this attempt.</p>
+    <table th:if="${!detail.trace.isEmpty()}">
+        <thead><tr><th>Type</th><th>Name</th><th>At</th><th class="num">Duration ms</th><th>Request</th><th>Evidence</th></tr></thead>
+        <tbody>
+        <tr th:each="e : ${detail.trace}">
+            <td th:text="${e.type}">tool</td>
+            <td th:text="${e.name}">name</td>
+            <td th:text="${e.at}">time</td>
+            <td class="num" th:text="${e.durationMs}">0</td>
+            <td><div class="trace-request" th:text="${e.request} ?: ${e.error}">request</div></td>
+            <td th:text="${e.evidenceIds.isEmpty()} ? '—' : ${e.evidenceIds}">—</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h2>Transitions</h2>
+    <table>
+        <thead><tr><th class="num">Seq</th><th>From</th><th>To</th><th>Event</th><th class="num">Attempt</th><th>At</th></tr></thead>
+        <tbody>
+        <tr th:each="t : ${detail.transitions}">
+            <td class="num" th:text="${t.seq}">1</td>
+            <td th:text="${t.from} ?: '—'">—</td>
+            <td th:text="${t.to}">NEW</td>
+            <td th:text="${t.event}">EVENT</td>
+            <td class="num" th:text="${t.attempt} ?: '—'">—</td>
+            <td th:text="${t.occurredAt}">time</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

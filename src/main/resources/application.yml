@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: deduction-audit-agent
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/deduction_audit}
+    username: ${DB_USER:deduction}
+    password: ${DB_PASSWORD:deduction}
+  mongodb:
+    uri: ${MONGO_URI:mongodb://localhost:27017/deduction_audit}
+  ai:
+    model:
+      chat: ${MODEL_PROVIDER:openai}
+    openai:
+      api-key: ${MODEL_API_KEY:${DEEPSEEK_API_KEY:}}
+      base-url: ${MODEL_BASE_URL:https://api.deepseek.com}
+      chat:
+        options:
+          model: ${MODEL_NAME:deepseek-chat}
+          temperature: 0
+
+app:
+  model-name: ${MODEL_NAME:deepseek-chat}
+  replay:
+    scenario: ${REPLAY_SCENARIO:}
+  evaluation:
+    total-budget: 45s
+    p95-target: 30s
+    model-round-timeout: 12s
+    tool-timeout: 3s
+    max-tool-calls: 6
+    max-model-rounds: 8
+    max-attempts: 2
+    retry-min-remaining: 12s
+  expiry:
+    cron: "0 0 1 * * *"
+  embedding:
+    provider: ${EMBEDDING_PROVIDER:http}
+    base-url: ${EMBEDDING_BASE_URL:https://dashscope.aliyuncs.com/compatible-mode}
+    api-key: ${EMBEDDING_API_KEY:${DASHSCOPE_API_KEY:}}
+    model: ${EMBEDDING_MODEL:text-embedding-v3}
+    dimensions: 1024
+
+logging:
+  level:
+    com.deductionaudit: INFO
