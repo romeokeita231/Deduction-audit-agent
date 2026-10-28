@@ -8,6 +8,7 @@ import com.deductionaudit.trace.TraceEntry;
 import com.deductionaudit.trace.TraceRecorder;
 import com.deductionaudit.trace.TraceUnavailableException;
 import com.deductionaudit.shared.ApiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
@@ -20,11 +21,14 @@ public class DetailService {
     private final DeductionStore store;
     private final WindowService windows;
     private final TraceRecorder trace;
+    private final ObjectMapper objectMapper;
 
-    public DetailService(DeductionStore store, WindowService windows, TraceRecorder trace) {
+    public DetailService(DeductionStore store, WindowService windows, TraceRecorder trace,
+                         ObjectMapper objectMapper) {
         this.store = store;
         this.windows = windows;
         this.trace = trace;
+        this.objectMapper = objectMapper;
     }
 
     public record AttemptView(
@@ -78,7 +82,8 @@ public class DetailService {
             EvaluationView evaluation,
             List<TransitionView> transitions,
             List<TraceEntry> trace,
-            boolean traceUnavailable) {
+            boolean traceUnavailable,
+            DocumentView document) {
     }
 
     public DetailView detail(UUID id, Integer requestedAttempt) {
@@ -124,6 +129,9 @@ public class DetailService {
                 traceUnavailable = true;
             }
         }
+        DocumentView document = store.findDisputeDocument(id)
+                .map(row -> DocumentView.from(row, objectMapper))
+                .orElse(null);
         return new DetailView(deduction.id(), deduction.retailerId(), retailerName, deduction.reasonCode(),
                 deduction.category() == null ? null : deduction.category().name(), deduction.amount(),
                 deduction.currency(), deduction.deductionDate(), deduction.receivedAt(),
@@ -131,6 +139,6 @@ public class DetailService {
                 deduction.parkedReason() == null ? null : deduction.parkedReason().name(),
                 windows.daysRemaining(deduction, timeZone),
                 deduction.status() == DeductionStatus.EXPIRED || windows.isExpired(deduction, timeZone),
-                attempts, evaluation, transitions, traceEntries, traceUnavailable);
+                attempts, evaluation, transitions, traceEntries, traceUnavailable, document);
     }
 }

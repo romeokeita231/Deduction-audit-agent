@@ -2,6 +2,7 @@ package com.deductionaudit.app;
 
 import com.deductionaudit.domain.Deduction;
 import com.deductionaudit.domain.DeductionStatus;
+import com.deductionaudit.domain.DisputeDocument;
 import com.deductionaudit.domain.ParkedReason;
 import com.deductionaudit.domain.TransitionContext;
 import com.deductionaudit.domain.TransitionEvent;
@@ -10,6 +11,7 @@ import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.persistence.DeductionStore;
 import com.deductionaudit.shared.ApiException;
 import com.deductionaudit.shared.WindowExpiredException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,24 +26,25 @@ public class ActionService {
     private final WindowService windows;
     private final Clock clock;
     private final TransitionApplier transitions;
+    private final ObjectMapper objectMapper;
 
     public ActionService(DeductionStore store, WindowService windows, Clock clock,
-                         TransitionApplier transitions) {
+                         TransitionApplier transitions, ObjectMapper objectMapper) {
         this.store = store;
         this.windows = windows;
         this.clock = clock;
         this.transitions = transitions;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(noRollbackFor = WindowExpiredException.class)
-    public ActionOutcome dispute(UUID id, String submittedBy, String note) {
+    public ActionOutcome dispute(UUID id, String submittedBy, String note, DisputeDocument document) {
         Deduction deduction = load(id);
-        VerdictRecord verdict = requireAwaitingAction(deduction);
-        if (verdict.verdict() == VerdictValue.INCONCLUSIVE) {
-            throw ApiException.conflict("INCONCLUSIVE_CANNOT_DISPUTE",
-                    "an inconclusive verdict can never be disputed");
-        }
-        store.insertDispute(id, clock.instant(), submittedBy, note);
+        VerdictRecord verdict = requireDisputable(deduction);
+        UUID disputeId = store.insertDispute(id, clock.instant(), submittedBy, note);
+        store.insertDisputeDocument(disputeId, id, verdict.attemptNo(),
+                objectMapper.valueToTree(document.claim()), document.narrative(), document.digest(),
+                document.evidenceVersion(), document.promptVersion(), document.model(), clock.instant());
         Deduction disputed = transitions.apply(deduction, TransitionEvent.DISPUTE,
                 TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()), null);
         var dispute = store.findDispute(id).orElseThrow();
@@ -121,12 +124,25 @@ public class ActionService {
         return deduction;
     }
 
-    private VerdictRecord requireAwaitingAction(Deduction deduction) {
+    VerdictRecord requireAwaitingAction(Deduction deduction) {
         if (deduction.status() != DeductionStatus.AWAITING_ACTION) {
             throw ApiException.conflict("ILLEGAL_TRANSITION",
                     "the deduction is " + deduction.status() + ", not AWAITING_ACTION");
         }
         return store.latestVerdict(deduction.id())
                 .orElseThrow(() -> ApiException.conflict("NO_VERDICT", "no verdict has been recorded"));
+    }
+
+    VerdictRecord requireDisputable(Deduction deduction) {
+        VerdictRecord verdict = requireAwaitingAction(deduction);
+        if (verdict.verdict() == VerdictValue.INCONCLUSIVE) {
+            throw ApiException.conflict("INCONCLUSIVE_CANNOT_DISPUTE",
+                    "an inconclusive verdict can never be disputed");
+        }
+        if (verdict.verdict() != VerdictValue.DISPUTABLE) {
+            throw ApiException.conflict("VERDICT_MISMATCH",
+                    "DISPUTE is not allowed for verdict " + verdict.verdict());
+        }
+        return verdict;
     }
 }

@@ -249,12 +249,14 @@ public class DeductionStore {
         return rows.stream().findFirst();
     }
 
-    public void insertDispute(UUID deductionId, Instant openedAt, String submittedBy, String note) {
+    public UUID insertDispute(UUID deductionId, Instant openedAt, String submittedBy, String note) {
+        UUID id = UUID.randomUUID();
         jdbc.update("""
                         INSERT INTO dispute (id, deduction_id, opened_at, submitted_by, note)
                         VALUES (?, ?, ?, ?, ?)
                         """,
-                UUID.randomUUID(), deductionId, toOffset(openedAt), submittedBy, note);
+                id, deductionId, toOffset(openedAt), submittedBy, note);
+        return id;
     }
 
     public void closeDispute(UUID deductionId, Instant closedAt, String result) {

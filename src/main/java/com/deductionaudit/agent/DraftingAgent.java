@@ -128,9 +128,15 @@ public class DraftingAgent {
             throw ApiException.serviceUnavailable("DRAFT_FAILED", e.getMessage());
         }
 
+        try {
+            validate(claim, output.narrative());
+        } catch (ApiException e) {
+            trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null, duration,
+                    evidenceIds, e.getMessage());
+            throw e;
+        }
         trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, text, duration,
                 evidenceIds, null);
-        validate(claim, output.narrative());
         return new DraftResult(output.narrative(), promptVersion(), modelName);
     }
 

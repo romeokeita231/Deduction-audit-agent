@@ -143,8 +143,8 @@ class DraftingAgentTest {
         assertThat(trace.drafts).hasSize(1);
         assertThat(trace.drafts.get(0).type()).isEqualTo("draft");
         assertThat(trace.drafts.get(0).name()).isEqualTo("drafter");
-        assertThat(trace.drafts.get(0).response()).isNotNull();
-        assertThat(trace.drafts.get(0).error()).isNull();
+        assertThat(trace.drafts.get(0).response()).isNull();
+        assertThat(trace.drafts.get(0).error()).contains("POD:SHP-FORGED");
         assertThat(trace.drafts.get(0).evidenceIds()).containsExactly(BOL);
     }
 
