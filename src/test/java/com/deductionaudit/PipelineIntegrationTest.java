@@ -467,6 +467,39 @@ class PipelineIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void theDetailPageRendersTheDisputeDocument() throws Exception {
+        evaluate(DISPUTE);
+        ResponseEntity<String> disputed = postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        assertThat(disputed.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String page = getHtml("/deductions/" + DISPUTE).getBody();
+        assertThat(page).contains("Dispute document", fixtureNarrative(DISPUTE), "480.00 USD");
+    }
+
+    @Test
+    void theDetailPageKeepsTheDocumentAfterTheDisputeIsWon() throws Exception {
+        evaluate(DISPUTE);
+        postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        ResponseEntity<String> won = postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "WON"));
+        assertThat(won.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode detail = detail(DISPUTE);
+        assertThat(detail.path("status").asText()).isEqualTo("WON");
+        assertThat(detail.path("document").isNull()).isFalse();
+        assertThat(detail.path("document").path("narrative").asText()).isEqualTo(fixtureNarrative(DISPUTE));
+        assertThat(getHtml("/deductions/" + DISPUTE).getBody()).contains(fixtureNarrative(DISPUTE));
+    }
+
+    @Test
+    void theDetailPageOmitsTheDocumentForAnUndisputedDeduction() {
+        evaluate(STANDS);
+        assertThat(detail(STANDS).path("document").isNull()).isTrue();
+        assertThat(getHtml("/deductions/" + STANDS).getBody()).doesNotContain("Dispute document");
+    }
+
+    @Test
     void aMissingDraftIs503AndWritesNothing() {
         JsonNode evaluation = evaluate(PROMO);
         assertThat(evaluation.path("verdict").path("verdict").asText()).isEqualTo("DISPUTABLE");

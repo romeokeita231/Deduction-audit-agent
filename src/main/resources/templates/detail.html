@@ -50,6 +50,7 @@
         a:hover { text-decoration: underline; }
         .muted { color: var(--muted); }
         .trace-request { white-space: pre-wrap; word-break: break-word; font-size: 12px; color: var(--muted); }
+        .document-narrative { white-space: pre-wrap; font-size: 14px; line-height: 1.6; }
     </style>
 </head>
 <body>
@@ -83,6 +84,14 @@
             <dt>Supporting evidence</dt><dd th:text="${detail.evaluation.supportingEvidence.isEmpty()} ? 'none' : ${detail.evaluation.supportingEvidence}">none</dd>
             <dt>Reasoning</dt><dd th:text="${detail.evaluation.reasoning}">reasoning</dd>
         </dl>
+    </div>
+
+    <div th:if="${detail.document != null}">
+        <h2>Dispute document</h2>
+        <dl>
+            <dt>Dispute amount</dt><dd th:text="${detail.document.claim.amount} + ' ' + ${detail.document.claim.currency}">0.00 USD</dd>
+        </dl>
+        <pre class="document-narrative" th:text="${detail.document.narrative}">narrative</pre>
     </div>
 
     <h2>Actions</h2>
