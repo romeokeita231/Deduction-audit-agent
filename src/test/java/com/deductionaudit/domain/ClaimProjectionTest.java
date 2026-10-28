@@ -53,7 +53,7 @@ class ClaimProjectionTest {
     }
 
     @Test
-    void basisIsThePromoSubsetOfTheUnionAndIsNeverNull() {
+    void basisIsThePromoSubsetOfSupportingEvidenceAndIsNeverNull() {
         Claim shortage = Claim.from(deduction(DeductionCategory.SHORTAGE, "480.00", "USD"),
                 verdict(1, List.of("EDI812:" + ID), List.of("BOL:SHP-DISPUTE", "POD:SHP-DISPUTE")));
         assertThat(shortage.basis()).isNotNull().isEmpty();

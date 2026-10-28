@@ -27,7 +27,6 @@ public record Claim(
 
         List<String> basis = new ArrayList<>();
         addUnique(basis, supporting);
-        addUnique(basis, references);
         basis.removeIf(id -> !id.startsWith("PROMO:"));
 
         return new Claim(
