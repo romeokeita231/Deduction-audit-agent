@@ -26,15 +26,15 @@ public class ActionService {
     private final WindowService windows;
     private final Clock clock;
     private final TransitionApplier transitions;
-    private final ObjectMapper objectMapper;
+
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     public ActionService(DeductionStore store, WindowService windows, Clock clock,
-                         TransitionApplier transitions, ObjectMapper objectMapper) {
+                         TransitionApplier transitions) {
         this.store = store;
         this.windows = windows;
         this.clock = clock;
         this.transitions = transitions;
-        this.objectMapper = objectMapper;
     }
 
     @Transactional(noRollbackFor = WindowExpiredException.class)
@@ -43,7 +43,7 @@ public class ActionService {
         VerdictRecord verdict = requireDisputable(deduction);
         UUID disputeId = store.insertDispute(id, clock.instant(), submittedBy, note);
         store.insertDisputeDocument(disputeId, id, verdict.attemptNo(),
-                objectMapper.valueToTree(document.claim()), document.narrative(), document.digest(),
+                JSON.valueToTree(document.claim()), document.narrative(), document.digest(),
                 document.evidenceVersion(), document.promptVersion(), document.model(), clock.instant());
         Deduction disputed = transitions.apply(deduction, TransitionEvent.DISPUTE,
                 TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()), null);

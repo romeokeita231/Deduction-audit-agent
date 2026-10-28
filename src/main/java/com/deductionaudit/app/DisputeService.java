@@ -17,19 +17,19 @@ import java.util.UUID;
 @Service
 public class DisputeService {
 
+    private static final ObjectMapper JSON = new ObjectMapper();
+
     private final DeductionStore store;
     private final ActionService actions;
     private final EvidenceDigestBuilder digestBuilder;
     private final DraftingAgent draftingAgent;
-    private final ObjectMapper objectMapper;
 
     public DisputeService(DeductionStore store, ActionService actions, EvidenceDigestBuilder digestBuilder,
-                          DraftingAgent draftingAgent, ObjectMapper objectMapper) {
+                          DraftingAgent draftingAgent) {
         this.store = store;
         this.actions = actions;
         this.digestBuilder = digestBuilder;
         this.draftingAgent = draftingAgent;
-        this.objectMapper = objectMapper;
     }
 
     public record Disputed(ActionOutcome outcome, DocumentView document) {
@@ -45,12 +45,12 @@ public class DisputeService {
         DraftingAgent.DraftResult draft = draftingAgent.draft(claim, digest);
 
         DisputeDocument document = new DisputeDocument(claim, draft.narrative(),
-                objectMapper.valueToTree(digest), evidenceVersion,
+                JSON.valueToTree(digest), evidenceVersion,
                 draft.promptVersion(), draft.model());
         ActionOutcome outcome = actions.dispute(id, submittedBy, note, document);
 
         DocumentView view = store.findDisputeDocument(id)
-                .map(row -> DocumentView.from(row, objectMapper))
+                .map(row -> DocumentView.from(row, JSON))
                 .orElseThrow(() -> ApiException.internal("DRAFT_INCONSISTENT",
                         "the dispute document was not written"));
         return new Disputed(outcome, view);
