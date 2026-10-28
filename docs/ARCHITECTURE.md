@@ -60,7 +60,7 @@ Spring Boot 4.1（单进程，JDK 25）
 
 - `claim`：`amount`、`currency`、`ask`（只带 `type`，不带金额）、`references[]`（标的物）、`supportingEvidence[]`（支持结论的证据）、`basis[]`（引用的协议条款 ID）。**全部确定性投影自 Verdict 与 Deduction 行，模型不产出任何字段。**
 - `narrative`：模型写的一段英文散文，全系统唯一由模型生成、且面向客户的文本。
-- `digest`：按 `claim` 引用的 ID 回查证据得到的事实快照，与文书一起冻结，带 `evidenceVersion`。
+- `digest`：按 `claim` 三个 ID 集合的并集逐项回查证据得到的事实快照——覆盖集合与并集相等，不多不少——与文书一起冻结，带 `evidenceVersion`。
 
 硬校验五条，全部确定性：两个数组都是**封闭集**（`references` 额外允许这笔扣款自己的 812）；`basis ⊆ supportingEvidence ∪ references`；`amount` / `currency` 与 Deduction 行逐字相等；正文出现的每个 ID 都落在三个集合内、且至少一个；正文无 markdown 标记。越界判失败，不进人工评审。
 
