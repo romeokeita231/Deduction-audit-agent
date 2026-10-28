@@ -11,5 +11,8 @@ public interface TraceRecorder {
     void recordToolCall(UUID deductionId, int attemptNo, String toolName, String arguments, String result,
                         long durationMs, List<String> evidenceIds, String error);
 
+    void recordDraft(UUID deductionId, int attemptNo, String model, String request, String response,
+                     long durationMs, List<String> evidenceIds, String error);
+
     List<TraceEntry> read(UUID deductionId, int attemptNo);
 }

@@ -1,5 +1,6 @@
 package com.deductionaudit.replay;
 
+import com.deductionaudit.shared.PromptMarker;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -33,6 +34,7 @@ public class ReplayChatModel implements ChatModel {
 
     private final ReplayScenario scenario;
     private final Map<UUID, AtomicInteger> attemptCounters = new ConcurrentHashMap<>();
+    private final Map<UUID, AtomicInteger> draftCounters = new ConcurrentHashMap<>();
     private final String modelName;
 
     public ReplayChatModel(ResourceLoader resourceLoader,
@@ -41,7 +43,7 @@ public class ReplayChatModel implements ChatModel {
         String location = environment.getProperty("app.replay.scenario", "classpath:replay/scenarios.json");
         Resource resource = resourceLoader.getResource(location);
         if (!resource.exists()) {
-            this.scenario = new ReplayScenario(modelName, Map.of());
+            this.scenario = new ReplayScenario(modelName, Map.of(), Map.of());
             return;
         }
         try (InputStream stream = resource.getInputStream()) {
@@ -53,10 +55,14 @@ public class ReplayChatModel implements ChatModel {
 
     public void reset() {
         attemptCounters.clear();
+        draftCounters.clear();
     }
 
     @Override
     public ChatResponse call(Prompt prompt) {
+        if (isDraft(prompt)) {
+            return draftResponse(deductionId(prompt));
+        }
         UUID deductionId = deductionId(prompt);
         List<Message> messages = prompt.getInstructions();
         long assistantMessages = messages.stream()
@@ -102,6 +108,29 @@ public class ReplayChatModel implements ChatModel {
         }
         return ChatResponse.builder()
                 .generations(List.of(new Generation(builder.build())))
+                .metadata("model", modelName)
+                .build();
+    }
+
+    private static boolean isDraft(Prompt prompt) {
+        for (Message message : prompt.getInstructions()) {
+            if (message.getText() != null && message.getText().contains(PromptMarker.DRAFT)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private ChatResponse draftResponse(UUID deductionId) {
+        int index = draftCounters.computeIfAbsent(deductionId, id -> new AtomicInteger()).incrementAndGet();
+        List<ReplayScenario.ReplayDraft> drafts = scenario.drafts().get(deductionId.toString());
+        if (drafts == null || index > drafts.size()) {
+            throw new IllegalStateException(
+                    "no replay draft " + index + " for deduction " + deductionId);
+        }
+        return ChatResponse.builder()
+                .generations(List.of(new Generation(
+                        AssistantMessage.builder().content(drafts.get(index - 1).text()).build())))
                 .metadata("model", modelName)
                 .build();
     }

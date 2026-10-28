@@ -53,6 +53,18 @@ public class MongoTraceRecorder implements TraceRecorder {
     }
 
     @Override
+    public void recordDraft(UUID deductionId, int attemptNo, String model, String request, String response,
+                            long durationMs, List<String> evidenceIds, String error) {
+        write(new Document("type", "draft")
+                .append("name", "drafter")
+                .append("request", truncate(request))
+                .append("response", truncate(response))
+                .append("evidenceIds", evidenceIds == null ? List.of() : evidenceIds)
+                .append("durationMs", durationMs)
+                .append("error", truncate(error)), deductionId, attemptNo);
+    }
+
+    @Override
     public List<TraceEntry> read(UUID deductionId, int attemptNo) {
         try {
             Query query = Query.query(Criteria.where("deductionId").is(deductionId.toString())
