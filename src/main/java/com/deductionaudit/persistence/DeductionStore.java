@@ -1,8 +1,10 @@
 package com.deductionaudit.persistence;
 
+import com.deductionaudit.domain.Claim;
 import com.deductionaudit.domain.Deduction;
 import com.deductionaudit.domain.DeductionCategory;
 import com.deductionaudit.domain.DeductionStatus;
+import com.deductionaudit.domain.DisputeDocument;
 import com.deductionaudit.domain.ParkedReason;
 import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.domain.VerdictValue;
@@ -264,16 +266,16 @@ public class DeductionStore {
                 toOffset(closedAt), result, deductionId);
     }
 
-    public void insertDisputeDocument(UUID disputeId, UUID deductionId, int attemptNo, JsonNode claim,
-                                      String narrative, JsonNode digest, int evidenceVersion,
-                                      String promptVersion, String model, Instant draftedAt) {
+    public void insertDisputeDocument(UUID disputeId, DisputeDocument document, Instant draftedAt) {
+        Claim claim = document.claim();
         jdbc.update("""
                         INSERT INTO dispute_document (dispute_id, deduction_id, attempt_no, claim, narrative,
                                                       digest, evidence_version, prompt_version, model, drafted_at)
                         VALUES (?, ?, ?, ?::jsonb, ?, ?::jsonb, ?, ?, ?, ?)
                         """,
-                disputeId, deductionId, attemptNo, json(claim), narrative, json(digest),
-                evidenceVersion, promptVersion, model, toOffset(draftedAt));
+                disputeId, claim.deductionId(), claim.attemptNo(), json(JSON.valueToTree(claim)),
+                document.narrative(), json(document.digest()), document.evidenceVersion(),
+                document.promptVersion(), document.model(), toOffset(draftedAt));
     }
 
     public Optional<DisputeDocumentRow> findDisputeDocument(UUID deductionId) {

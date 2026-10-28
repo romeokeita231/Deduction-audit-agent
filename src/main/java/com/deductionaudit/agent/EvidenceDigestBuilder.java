@@ -16,7 +16,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -35,13 +34,8 @@ public class EvidenceDigestBuilder {
     }
 
     public List<DigestItem> build(Deduction deduction, Claim claim) {
-        LinkedHashSet<String> ids = new LinkedHashSet<>();
-        ids.addAll(claim.references());
-        ids.addAll(claim.supportingEvidence());
-        ids.addAll(claim.basis());
-
         List<DigestItem> items = new ArrayList<>();
-        for (String id : ids) {
+        for (String id : claim.closedSet()) {
             items.add(resolve(deduction, id));
         }
         items.sort(Comparator.comparing(DigestItem::evidenceId));

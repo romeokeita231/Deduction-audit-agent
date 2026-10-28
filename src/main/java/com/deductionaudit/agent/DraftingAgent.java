@@ -3,6 +3,7 @@ package com.deductionaudit.agent;
 import com.deductionaudit.agent.EvidenceDigestBuilder.DigestItem;
 import com.deductionaudit.config.EvaluationProperties;
 import com.deductionaudit.domain.Claim;
+import com.deductionaudit.domain.EvidenceReference;
 import com.deductionaudit.shared.ApiException;
 import com.deductionaudit.shared.PromptMarker;
 import com.deductionaudit.trace.TraceRecorder;
@@ -32,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 public class DraftingAgent {
@@ -59,11 +59,7 @@ public class DraftingAgent {
             4. Close the letter.
             """;
 
-    private static final ObjectMapper JSON = new ObjectMapper()
-            .configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
-                    false);
-    private static final Pattern EVIDENCE_ID = Pattern.compile(
-            "(?<![A-Za-z0-9_])(?:ASN|BOL|POD|PRICE|INVOICE|PROMO|SETTLE|EDI812):[A-Za-z0-9._:\\-·§]+");
+    private static final ObjectMapper JSON = new ObjectMapper();
     private static final int MAX_FIELD = 2000;
 
     private final ObjectProvider<ChatModel> chatModel;
@@ -95,7 +91,7 @@ public class DraftingAgent {
 
         ChatModel model = chatModel.getIfAvailable();
         if (model == null) {
-            throw failure(claim, request, evidenceIds, 0, "no chat model is configured");
+            throw failure(claim, request, evidenceIds, null, null, 0, "no chat model is configured");
         }
 
         Instant started = Instant.now();
@@ -106,45 +102,50 @@ public class DraftingAgent {
         } catch (TimeoutException e) {
             future.cancel(true);
             long duration = Duration.between(started, Instant.now()).toMillis();
-            throw failure(claim, request, evidenceIds, duration, "model round timeout");
+            throw failure(claim, request, evidenceIds, null, null, duration, "model round timeout");
         } catch (ExecutionException e) {
             Throwable cause = e.getCause() == null ? e : e.getCause();
             long duration = Duration.between(started, Instant.now()).toMillis();
-            throw failure(claim, request, evidenceIds, duration, "model round failed: " + cause.getMessage());
+            throw failure(claim, request, evidenceIds, null, null, duration,
+                    "model round failed: " + cause.getMessage());
         } catch (InterruptedException e) {
             future.cancel(true);
             Thread.currentThread().interrupt();
             long duration = Duration.between(started, Instant.now()).toMillis();
-            throw failure(claim, request, evidenceIds, duration, "interrupted while waiting for the model");
+            throw failure(claim, request, evidenceIds, null, null, duration,
+                    "interrupted while waiting for the model");
         }
 
         long duration = Duration.between(started, Instant.now()).toMillis();
+        Integer inputTokens = inputTokens(response);
+        Integer outputTokens = outputTokens(response);
         String text = text(response);
         DraftOutput output;
         try {
             output = parse(text);
         } catch (IllegalArgumentException e) {
-            trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null, duration,
-                    evidenceIds, e.getMessage());
+            trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null,
+                    inputTokens, outputTokens, duration, evidenceIds, e.getMessage());
             throw ApiException.serviceUnavailable("DRAFT_FAILED", e.getMessage());
         }
 
         try {
             validate(claim, output.narrative());
         } catch (ApiException e) {
-            trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null, duration,
-                    evidenceIds, e.getMessage());
+            trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null,
+                    inputTokens, outputTokens, duration, evidenceIds, e.getMessage());
             throw e;
         }
-        trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, text, duration,
-                evidenceIds, null);
+        trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, text,
+                inputTokens, outputTokens, duration, evidenceIds, null);
         return new DraftResult(output.narrative(), promptVersion(), modelName);
     }
 
-    private ApiException failure(Claim claim, String request, List<String> evidenceIds, long duration,
+    private ApiException failure(Claim claim, String request, List<String> evidenceIds,
+                                 Integer inputTokens, Integer outputTokens, long duration,
                                  String error) {
-        trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null, duration,
-                evidenceIds, error);
+        trace.recordDraft(claim.deductionId(), claim.attemptNo(), modelName, request, null,
+                inputTokens, outputTokens, duration, evidenceIds, error);
         return ApiException.serviceUnavailable("DRAFT_FAILED", error);
     }
 
@@ -178,13 +179,10 @@ public class DraftingAgent {
             throw ApiException.internal("DRAFT_INCONSISTENT", "the narrative contains a code fence");
         }
 
-        Set<String> allowed = new HashSet<>();
-        allowed.addAll(claim.references());
-        allowed.addAll(claim.supportingEvidence());
-        allowed.addAll(claim.basis());
+        Set<String> allowed = new HashSet<>(claim.closedSet());
 
         List<String> named = new ArrayList<>();
-        Matcher matcher = EVIDENCE_ID.matcher(text);
+        Matcher matcher = EvidenceReference.PATTERN.matcher(text);
         while (matcher.find()) {
             named.add(matcher.group().replaceAll("[.,;:]+$", ""));
         }
@@ -222,6 +220,16 @@ public class DraftingAgent {
         AssistantMessage output = response == null || response.getResult() == null
                 ? null : response.getResult().getOutput();
         return output == null ? null : output.getText();
+    }
+
+    private static Integer inputTokens(ChatResponse response) {
+        return response == null || response.getMetadata() == null || response.getMetadata().getUsage() == null
+                ? null : response.getMetadata().getUsage().getPromptTokens();
+    }
+
+    private static Integer outputTokens(ChatResponse response) {
+        return response == null || response.getMetadata() == null || response.getMetadata().getUsage() == null
+                ? null : response.getMetadata().getUsage().getCompletionTokens();
     }
 
     private static String summarize(Prompt prompt) {

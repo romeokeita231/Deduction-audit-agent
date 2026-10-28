@@ -12,7 +12,8 @@ public interface TraceRecorder {
                         long durationMs, List<String> evidenceIds, String error);
 
     void recordDraft(UUID deductionId, int attemptNo, String model, String request, String response,
-                     long durationMs, List<String> evidenceIds, String error);
+                     Integer inputTokens, Integer outputTokens, long durationMs, List<String> evidenceIds,
+                     String error);
 
     List<TraceEntry> read(UUID deductionId, int attemptNo);
 }

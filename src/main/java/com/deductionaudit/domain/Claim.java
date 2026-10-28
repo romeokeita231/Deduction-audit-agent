@@ -41,6 +41,13 @@ public record Claim(
                 List.copyOf(basis));
     }
 
+    public List<String> closedSet() {
+        LinkedHashSet<String> ids = new LinkedHashSet<>(references);
+        ids.addAll(supportingEvidence);
+        ids.addAll(basis);
+        return List.copyOf(ids);
+    }
+
     private static void addUnique(List<String> target, List<String> values) {
         if (values == null) {
             return;

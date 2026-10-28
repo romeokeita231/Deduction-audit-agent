@@ -67,6 +67,17 @@ class ClaimProjectionTest {
                 .containsAll(promotion.basis());
     }
 
+    @Test
+    void theClosedSetIsTheUnionOfTheThreeListsInOrder() {
+        Claim claim = new Claim(ID, 1, "PROMOTION", "160.00", "USD", Ask.REVERSE_DEDUCTION,
+                List.of("EDI812:" + ID, "BOL:SHP-DISPUTE"),
+                List.of("PROMO:PA-07·§3.1", "BOL:SHP-DISPUTE"),
+                List.of("PROMO:PA-07·§3.1"));
+
+        assertThat(claim.closedSet()).containsExactly("EDI812:" + ID, "BOL:SHP-DISPUTE",
+                "PROMO:PA-07·§3.1");
+    }
+
     private static Deduction deduction(DeductionCategory category, String amount, String currency) {
         return new Deduction(ID, "NYC", "SHORT", category, new BigDecimal(amount), currency,
                 LocalDate.of(2026, 3, 5), Instant.parse("2026-03-05T00:00:00Z"),

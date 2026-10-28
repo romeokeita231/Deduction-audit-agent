@@ -416,9 +416,13 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(document.path("narrative").asText()).isEqualTo(fixtureNarrative(DISPUTE));
         assertThat(document.path("digest").size()).isEqualTo(3);
         assertThat(document.path("evidenceVersion").asInt()).isEqualTo(1);
-        assertThat(document.path("promptVersion").asText()).isNotBlank();
+        assertThat(document.path("promptVersion").asText()).hasSize(12);
         assertThat(document.path("model").asText()).isNotBlank();
         assertThat(document.path("draftedAt").asText()).isNotBlank();
+
+        String narrative = document.path("narrative").asText();
+        assertThat(narrative.split("\\n\\s*\\n")).hasSizeBetween(3, 5);
+        assertThat(narrative.trim().split("\\s+")).hasSizeBetween(120, 250);
 
         JsonNode claim = document.path("claim");
         assertThat(claim.path("deductionId").asText()).isEqualTo(DISPUTE);

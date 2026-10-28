@@ -1,5 +1,8 @@
 package com.deductionaudit;
 
+import com.deductionaudit.domain.Ask;
+import com.deductionaudit.domain.Claim;
+import com.deductionaudit.domain.DisputeDocument;
 import com.deductionaudit.domain.MissingEvidence;
 import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.domain.VerdictValue;
@@ -34,11 +37,9 @@ class DisputeDocumentStoreIntegrationTest extends IntegrationTestBase {
         store.insertDispute(DISPUTE, FIXED_NOW, "ar-1", null);
         UUID disputeId = store.findDispute(DISPUTE).orElseThrow().id();
 
-        JsonNode claim = claim(DISPUTE);
-        JsonNode digest = json.createArrayNode();
+        DisputeDocument document = document(claim(STANDS), json.createArrayNode());
 
-        assertThatThrownBy(() -> store.insertDisputeDocument(disputeId, STANDS, 1, claim, "narrative",
-                digest, 1, "sha256:prompt", "replay", FIXED_NOW))
+        assertThatThrownBy(() -> store.insertDisputeDocument(disputeId, document, FIXED_NOW))
                 .isInstanceOf(DataIntegrityViolationException.class);
 
         assertThat(store.findDisputeDocument(STANDS)).isEmpty();
@@ -50,14 +51,11 @@ class DisputeDocumentStoreIntegrationTest extends IntegrationTestBase {
         insertVerdict(DISPUTE, 1);
         store.insertDispute(DISPUTE, FIXED_NOW, "ar-1", null);
         UUID disputeId = store.findDispute(DISPUTE).orElseThrow().id();
-        JsonNode claim = claim(DISPUTE);
-        JsonNode digest = json.createArrayNode();
+        DisputeDocument document = document(claim(DISPUTE), json.createArrayNode());
 
-        store.insertDisputeDocument(disputeId, DISPUTE, 1, claim, "narrative", digest, 1,
-                "sha256:prompt", "replay", FIXED_NOW);
+        store.insertDisputeDocument(disputeId, document, FIXED_NOW);
 
-        assertThatThrownBy(() -> store.insertDisputeDocument(disputeId, DISPUTE, 1, claim, "narrative",
-                digest, 1, "sha256:prompt", "replay", FIXED_NOW))
+        assertThatThrownBy(() -> store.insertDisputeDocument(disputeId, document, FIXED_NOW))
                 .isInstanceOf(DuplicateKeyException.class);
 
         assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute_document WHERE dispute_id = ?::uuid",
@@ -69,25 +67,19 @@ class DisputeDocumentStoreIntegrationTest extends IntegrationTestBase {
         insertVerdict(DISPUTE, 1);
         store.insertDispute(DISPUTE, FIXED_NOW, "ar-1", null);
         UUID disputeId = store.findDispute(DISPUTE).orElseThrow().id();
-        JsonNode claim = json.readTree("""
-                {"deductionId":"11111111-1111-1111-1111-111111111111","attemptNo":1,
-                 "amount":"480.00","ask":{"type":"REVERSE_DEDUCTION"},
-                 "references":["EDI812:11111111-1111-1111-1111-111111111111"],
-                 "supportingEvidence":["BOL:SHP-DISPUTE","POD:SHP-DISPUTE"],"basis":[]}
-                """);
+        Claim claim = claim(DISPUTE);
         JsonNode digest = json.readTree("""
                 [{"evidenceId":"BOL:SHP-DISPUTE","kind":"BOL","fields":{"shippedQty":120,"carrier":"XPO"}},
                  {"evidenceId":"EDI812:11111111-1111-1111-1111-111111111111","kind":"EDI812",
                   "fields":{"deductionId":"11111111-1111-1111-1111-111111111111"}}]
                 """);
 
-        store.insertDisputeDocument(disputeId, DISPUTE, 1, claim, "The deduction is not supported.",
-                digest, 1, "sha256:prompt", "replay", FIXED_NOW);
+        store.insertDisputeDocument(disputeId, document(claim, digest), FIXED_NOW);
 
         DeductionStore.DisputeDocumentRow row = store.findDisputeDocument(DISPUTE).orElseThrow();
         assertThat(row.disputeId()).isEqualTo(disputeId);
         assertThat(row.attemptNo()).isEqualTo(1);
-        assertThat(row.claim()).isEqualTo(claim);
+        assertThat(row.claim()).isEqualTo(json.valueToTree(claim));
         assertThat(row.digest()).isEqualTo(digest);
         assertThat(row.narrative()).isEqualTo("The deduction is not supported.");
         assertThat(row.evidenceVersion()).isEqualTo(1);
@@ -109,7 +101,14 @@ class DisputeDocumentStoreIntegrationTest extends IntegrationTestBase {
                 "reasoning", "sha256:prompt", "policy", 1, "replay", FIXED_NOW));
     }
 
-    private JsonNode claim(UUID deductionId) {
-        return json.createObjectNode().put("deductionId", deductionId.toString());
+    private static Claim claim(UUID deductionId) {
+        return new Claim(deductionId, 1, "SHORTAGE", "480.00", "USD", Ask.REVERSE_DEDUCTION,
+                List.of("EDI812:" + deductionId),
+                List.of("BOL:SHP-DISPUTE", "POD:SHP-DISPUTE"), List.of());
+    }
+
+    private static DisputeDocument document(Claim claim, JsonNode digest) {
+        return new DisputeDocument(claim, "The deduction is not supported.", digest, 1, "sha256:prompt",
+                "replay");
     }
 }

@@ -1,5 +1,6 @@
 package com.deductionaudit.app;
 
+import com.deductionaudit.domain.Claim;
 import com.deductionaudit.domain.Deduction;
 import com.deductionaudit.domain.DeductionStatus;
 import com.deductionaudit.domain.DisputeDocument;
@@ -11,7 +12,6 @@ import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.persistence.DeductionStore;
 import com.deductionaudit.shared.ApiException;
 import com.deductionaudit.shared.WindowExpiredException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +27,6 @@ public class ActionService {
     private final Clock clock;
     private final TransitionApplier transitions;
 
-    private static final ObjectMapper JSON = new ObjectMapper();
-
     public ActionService(DeductionStore store, WindowService windows, Clock clock,
                          TransitionApplier transitions) {
         this.store = store;
@@ -41,15 +39,23 @@ public class ActionService {
     public ActionOutcome dispute(UUID id, String submittedBy, String note, DisputeDocument document) {
         Deduction deduction = load(id);
         VerdictRecord verdict = requireDisputable(deduction);
+        requireClaimFromThisVerdict(document, deduction, verdict);
         UUID disputeId = store.insertDispute(id, clock.instant(), submittedBy, note);
-        store.insertDisputeDocument(disputeId, id, verdict.attemptNo(),
-                JSON.valueToTree(document.claim()), document.narrative(), document.digest(),
-                document.evidenceVersion(), document.promptVersion(), document.model(), clock.instant());
+        store.insertDisputeDocument(disputeId, document, clock.instant());
         Deduction disputed = transitions.apply(deduction, TransitionEvent.DISPUTE,
                 TransitionContext.forVerdict(verdict.verdict(), verdict.missingEvidence()), null);
         var dispute = store.findDispute(id).orElseThrow();
         return new ActionOutcome(disputed.id(), disputed.status(), dispute.id().toString(),
                 dispute.openedAt(), dispute.closedAt(), dispute.result());
+    }
+
+    private static void requireClaimFromThisVerdict(DisputeDocument document, Deduction deduction,
+                                                    VerdictRecord verdict) {
+        Claim claim = document.claim();
+        if (!claim.deductionId().equals(deduction.id()) || claim.attemptNo() != verdict.attemptNo()) {
+            throw ApiException.internal("DRAFT_INCONSISTENT",
+                    "the claim was projected from another verdict, not attempt " + verdict.attemptNo());
+        }
     }
 
     @Transactional(noRollbackFor = WindowExpiredException.class)

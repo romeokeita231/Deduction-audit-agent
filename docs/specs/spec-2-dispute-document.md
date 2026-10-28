@@ -94,7 +94,7 @@ ID 反解析规则（`EvidenceDigestBuilder`）：
   "narrative": "...",
   "digest": [ ],
   "evidenceVersion": 1,
-  "promptVersion": "sha256:...",
+  "promptVersion": "9f2c1a7b3d4e",
   "model": "...",
   "draftedAt": "2026-10-28T02:11:03Z"
 }
@@ -118,7 +118,7 @@ tx      re-check requireAwaitingAction（窗口可能刚好过期、别人可能
 ```
 
 - **守卫只有一份实现**：事务外那次直接调用现成的 `requireAwaitingAction`（包级可见），不在 `DisputeService` 里重写谓词。两份守卫迟早分叉，而分叉的表现是"事务外放过、事务内 500"。
-- `attempt_no` 与 draft 轨迹的 `attemptNo` 都在写事务内从守卫结果重新取，不用事务外那次读的值。
+- `attempt_no` 由 `claim` 派生：`DeductionStore.insertDisputeDocument` 直接取 `claim.deductionId()` 与 `claim.attemptNo()`，不再作为独立参数传下来。事务内再用 `requireClaimFromThisVerdict` 逐字比对 `claim` 与重查得到的 `verdict`，不一致即 500 `DRAFT_INCONSISTENT`——写事务里"取错那次判决"是最容易漏的一刀。draft 轨迹的 `attemptNo` 取 `source_attempt_no`，不用事务外那次读的值。
 - `ActionService` 是另一个 bean，代理生效，第二段仍是它自己的 `@Transactional`；不需要 `TransactionTemplate`，也不会踩 self-invocation。
 - "全有或全无"由第二段单事务保证，不靠把模型包进事务。第一段一行未写。
 
@@ -127,9 +127,12 @@ tx      re-check requireAwaitingAction（窗口可能刚好过期、别人可能
 | 情形 | 状态 | 码 |
 |---|---|---|
 | 模型不可用、超时、回非法 JSON、无 `ChatModel` | 503 | `DRAFT_FAILED` |
+| 输出多带字段，不满足"只有一个字段" | 503 | `DRAFT_FAILED` |
 | 投影不变量违反、ID 回查不到、正文 ID 越界、正文 markdown 标记 | 500 | `DRAFT_INCONSISTENT` |
 
 500 的语义是内部矛盾——重试永远不会成功，必须让 AR 看到 500 而不是无脑重试。`DRAFT_INCONSISTENT` 的异常必须带**是哪个 ID**。
+
+多带字段是模型侧偏离契约，不是内部矛盾，所以给可重试的 503；但解析器是严格的（不关 `FAIL_ON_UNKNOWN_PROPERTIES`），它不会悄悄吞掉多余字段。
 
 失败不落行，状态停在 `AWAITING_ACTION`，AR 原样重试。并发重复提交由事务内重查守卫给 409。
 
@@ -186,7 +189,7 @@ UPDATE evidence_version SET version = version + 1, updated_at = now();
 - `attemptNo` 取 `source_attempt_no`（文书引用的那次判决），不是"当前 attempt"——`read` 按 `(deductionId, attemptNo)` 过滤，取错就落到另一张表里。
 - `evidenceIds` 装 digest 的 ID 列表，页面"Evidence"列只放 ID；金额留在 `request` 里。
 - 复用 `type` 而不是加 `phase` 列：`type` 的存在意义就是判别位。
-- **draft trace 写在校验之前，失败不回滚。** 它在 Mongo，PG 事务管不到它，所以 503 与 500 也各留一条：`response` 空、`error` 有值。否则"模型不可用"这个最需要现场的失败在详情页上什么都看不到，`traceUnavailable` 那段就没有存在意义。
+- **draft trace 在模型往返之后、PG 事务之外写，失败也写一条，不回滚。** 它在 Mongo，PG 事务管不到它，所以 503 与 500 也各留一条：`response` 空、`error` 有值。否则"模型不可用"这个最需要现场的失败在详情页上什么都看不到，`traceUnavailable` 那段就没有存在意义。
 
 ## 6. 回放 fixture
 
@@ -287,6 +290,6 @@ LLM judge 的"文书可用率"降为人工抽检的观察项，输入口径固�
 
 ## 11. 变更台账
 
-- 新增：`V2__dispute_document.sql`、`agent/DraftingAgent`、`agent/EvidenceDigestBuilder`、`app/DisputeService`、`domain/DisputeDocument`、`domain/EvidenceReference`（静态 `parse`）、`shared/PromptMarker`、`web/DocumentView` / `DisputeResponse`、详情页一段模板 + 三行 CSS；测试侧 `EvidenceReferenceTest`、`DrafterPromptTest`，`PipelineIntegrationTest` / `ReplayChatModelTest` 扩条。
+- 新增：`V2__dispute_document.sql`、`agent/DraftingAgent`、`agent/EvidenceDigestBuilder`、`app/DisputeService`、`app/DocumentView`、`web/DisputeResponse`（把 `DocumentView` 嵌在 `document` 键下，不摊平）、`domain/DisputeDocument`、`domain/EvidenceReference`（静态 `parse`）、`shared/PromptMarker`、详情页一段模板 + 三行 CSS；测试侧 `EvidenceReferenceTest`、`DrafterPromptTest`，`PipelineIntegrationTest` / `ReplayChatModelTest` 扩条。
 - 改动：`ActionService.dispute` 签名加 `DisputeDocument`；`DeductionController` 的 `/dispute` 改调 `DisputeService`；`DetailService`/`DetailView` 加 `document`；`ApiException` 加两个工厂；`ReplayScenario`/`ReplayChatModel` 加 `drafts` 通道。
 - 不动：`close` / `result` 的响应与实现、状态机转移、窗口计算、三个 Validator、工具集。

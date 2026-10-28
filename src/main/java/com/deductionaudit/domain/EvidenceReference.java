@@ -1,5 +1,9 @@
 package com.deductionaudit.domain;
 
+import java.util.Arrays;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 public record EvidenceReference(Kind kind, String key, String qualifier) {
 
     public enum Kind {
@@ -12,6 +16,10 @@ public record EvidenceReference(Kind kind, String key, String qualifier) {
         SETTLE,
         EDI812
     }
+
+    public static final Pattern PATTERN = Pattern.compile(
+            "(?<![A-Za-z0-9_])(?:" + Arrays.stream(Kind.values()).map(Enum::name)
+                    .collect(Collectors.joining("|")) + "):[A-Za-z0-9._:\\-·§]+");
 
     public static EvidenceReference parse(String id) {
         int colon = id.indexOf(':');

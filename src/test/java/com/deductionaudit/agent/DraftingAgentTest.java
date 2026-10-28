@@ -10,6 +10,8 @@ import com.deductionaudit.trace.TraceRecorder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.metadata.ChatResponseMetadata;
+import org.springframework.ai.chat.metadata.DefaultUsage;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.model.Generation;
@@ -117,9 +119,10 @@ class DraftingAgentTest {
 
         @Override
         public void recordDraft(UUID deductionId, int attemptNo, String model, String request,
-                                String response, long durationMs, List<String> evidenceIds, String error) {
+                                String response, Integer inputTokens, Integer outputTokens, long durationMs,
+                                List<String> evidenceIds, String error) {
             drafts.add(new TraceEntry(deductionId, attemptNo, "draft", "drafter", Instant.now(), durationMs,
-                    request, response, evidenceIds, null, null, error));
+                    request, response, evidenceIds, inputTokens, outputTokens, error));
         }
 
         @Override
@@ -223,6 +226,37 @@ class DraftingAgentTest {
         assertThat(result.promptVersion()).hasSize(12);
         assertThat(result.model()).isEqualTo("test-model");
         assertThat(trace.drafts).hasSize(1);
+    }
+
+    @Test
+    void theTraceCarriesTheTokenCountsOfTheRound() {
+        RecordingTrace trace = new RecordingTrace();
+        ChatResponse answered = ChatResponse.builder()
+                .generations(List.of(new Generation(new AssistantMessage(narrativeJson(BOL + " is attached.")))))
+                .metadata(ChatResponseMetadata.builder().usage(new DefaultUsage(31, 12)).build())
+                .build();
+        DraftingAgent agent = agent(new StubChatModel(() -> answered), trace);
+
+        agent.draft(claim(), digest());
+
+        assertThat(trace.drafts).hasSize(1);
+        assertThat(trace.drafts.get(0).inputTokens()).isEqualTo(31);
+        assertThat(trace.drafts.get(0).outputTokens()).isEqualTo(12);
+    }
+
+    @Test
+    void anExtraFieldInTheModelAnswerIsADraftFailure() {
+        RecordingTrace trace = new RecordingTrace();
+        DraftingAgent agent = agent(StubChatModel.text(
+                "{\"narrative\":\"" + BOL + " is attached.\",\"subject\":\"Re: deduction\"}"), trace);
+
+        assertThatThrownBy(() -> agent.draft(claim(), digest()))
+                .isInstanceOfSatisfying(ApiException.class, e -> {
+                    assertThat(e.status()).isEqualTo(503);
+                    assertThat(e.code()).isEqualTo("DRAFT_FAILED");
+                });
+        assertThat(trace.drafts).hasSize(1);
+        assertThat(trace.drafts.get(0).response()).isNull();
     }
 
     @Test

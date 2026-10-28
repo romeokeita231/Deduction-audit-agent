@@ -39,6 +39,15 @@ class EvidenceReferenceTest {
     }
 
     @Test
+    void thePatternMatchesEveryPrefixInTheClosedSet() {
+        for (EvidenceReference.Kind kind : EvidenceReference.Kind.values()) {
+            assertThat(EvidenceReference.PATTERN.matcher(kind.name() + ":X-1").find()).isTrue();
+        }
+        assertThat(EvidenceReference.PATTERN.matcher("See POD:SHIP-0442, please.").find()).isTrue();
+        assertThat(EvidenceReference.PATTERN.matcher("pod:SHIP-0442").find()).isFalse();
+    }
+
+    @Test
     void unknownPrefixesAreRejected() {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> EvidenceReference.parse("XYZ:1"))
                 .isInstanceOf(IllegalArgumentException.class);
