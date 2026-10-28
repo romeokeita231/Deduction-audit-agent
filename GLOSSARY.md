@@ -119,3 +119,29 @@ _Avoid_: refund、回收金额
 **Win Rate**:
 已提交争议中获胜的比例。分母是曾提交过争议且已出结果的扣款；未决争议、接受扣款、放弃争议、已逾期都不进分母。
 _Avoid_: 成功率、accuracy
+
+### 文书
+
+**Dispute Document（争议文书）**:
+一次 Dispute 的成文产物，由 AR 导出后在系统外发给零售商。它只在 Dispute 成立的那一刻存在，之后不可改写。
+_Avoid_: 申诉信、letter、claim letter
+
+**Narrative（正文）**:
+文书中供人阅读的散文段落，也是全系统唯一由模型写进对外文本的部分。
+_Avoid_: body、content、摘要
+
+**Ask（诉求）**:
+文书要求零售商做的那一件事：撤销这笔扣款、开出等额 Credit Memo。
+_Avoid_: request、demand、索赔
+
+**Basis（条款依据）**:
+文书据以主张的协议条款引用。只有促销类有条款可引，缺货与价格类的政策依据写在正文里。
+_Avoid_: 依据、citation、reference
+
+**Evidence Digest（证据摘要）**:
+文书生成时按引用 ID 回查证据得到的事实快照，随文书一起冻结、带证据版本号。它不是缓存，而是这一份文书当时看到的证据本身。
+_Avoid_: 证据缓存、snapshot cache
+
+**claim**:
+仅指争议文书的结构化部分（金额、诉求、引用、证据、条款依据），与 Verdict 一一投影。**在文书之外的任何语境里，这个词仍然禁用**——扣款是 Deduction，申诉是 Dispute。
+_Avoid_: 用它指代 Deduction 或 Dispute

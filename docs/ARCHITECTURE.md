@@ -56,12 +56,15 @@ Spring Boot 4.1（单进程，JDK 25）
 
 ## 争议文书
 
-两段式，先结构后文字：
+两段式，先结构后文字，**两段的作者不同**（[ADR 0008](./adr/0008-dispute-document-projection-and-narrative.md)）：
 
-- `claim`：`amount`、`ask`（要零售商做什么）、`references[]`（标的物）、`supportingEvidence[]`（支持结论的证据）、`basis[]`（引用的协议条款 ID）
-- `narrative`：由 `claim` 渲染的正文
+- `claim`：`amount`、`currency`、`ask`（只带 `type`，不带金额）、`references[]`（标的物）、`supportingEvidence[]`（支持结论的证据）、`basis[]`（引用的协议条款 ID）。**全部确定性投影自 Verdict 与 Deduction 行，模型不产出任何字段。**
+- `narrative`：模型写的一段英文散文，全系统唯一由模型生成、且面向客户的文本。
+- `digest`：按 `claim` 引用的 ID 回查证据得到的事实快照，与文书一起冻结，带 `evidenceVersion`。
 
-硬校验：两个数组都是**封闭集**——只能出现本次运行工具返回过的 ID；`references` 额外允许这笔扣款自己的 812。越界判失败，不进人工评审。
+硬校验五条，全部确定性：两个数组都是**封闭集**（`references` 额外允许这笔扣款自己的 812）；`basis ⊆ supportingEvidence ∪ references`；`amount` / `currency` 与 Deduction 行逐字相等；正文出现的每个 ID 都落在三个集合内、且至少一个；正文无 markdown 标记。越界判失败，不进人工评审。
+
+生成不在事务内：守卫（只读）→ digest → 模型往返 → 单事务落库与转移。模型不可用是 503，投影矛盾是 500——重试永远不会成功的错误必须让调用方看见。
 
 **为什么拆成两个数组**：812 是被争的对象，不是支持性证据。混在一个数组里，一份如实写了"零售商依据 812 第 3 行主张缺货"的文书会被精确率扣分——**指标不该惩罚诚实**。
 
@@ -83,4 +86,4 @@ Spring Boot 4.1（单进程，JDK 25）
 
 - [状态机](./STATE-MACHINE.md)——10 个状态、13 条转移、7 条不变量
 - [术语表](../GLOSSARY.md)
-- ADR：[0001 扣款是事件](./adr/0001-deduction-is-an-event-not-a-state.md) · [0002 单进程](./adr/0002-java-runtime-python-only-for-evaluation.md) · [0003 一台状态机](./adr/0003-one-state-machine-on-deduction.md) · [0004 规则进上下文、答案不进](./adr/0004-rules-in-context-answers-never.md) · [0005 证据 ID](./adr/0005-evidence-ids-from-natural-keys.md) · [0006 轨迹是旁路](./adr/0006-trace-is-a-sidecar.md) · [0007 CI 不跑模型](./adr/0007-ci-runs-pipeline-not-model.md)
+- ADR：[0001 扣款是事件](./adr/0001-deduction-is-an-event-not-a-state.md) · [0002 单进程](./adr/0002-java-runtime-python-only-for-evaluation.md) · [0003 一台状态机](./adr/0003-one-state-machine-on-deduction.md) · [0004 规则进上下文、答案不进](./adr/0004-rules-in-context-answers-never.md) · [0005 证据 ID](./adr/0005-evidence-ids-from-natural-keys.md) · [0006 轨迹是旁路](./adr/0006-trace-is-a-sidecar.md) · [0007 CI 不跑模型](./adr/0007-ci-runs-pipeline-not-model.md) · [0008 结构与正文的作者](./adr/0008-dispute-document-projection-and-narrative.md)
