@@ -175,6 +175,30 @@ class DraftingAgentTest {
     }
 
     @Test
+    void aMarkdownMarkerInASecondParagraphFails() {
+        DraftingAgent agent = agent(StubChatModel.text(narrativeJson(
+                        "The deduction is not supported.\\n\\n- " + BOL + " is attached.")),
+                new RecordingTrace());
+
+        assertThatThrownBy(() -> agent.draft(claim(), digest()))
+                .isInstanceOfSatisfying(ApiException.class, e -> {
+                    assertThat(e.status()).isEqualTo(500);
+                    assertThat(e.code()).isEqualTo("DRAFT_INCONSISTENT");
+                    assertThat(e.getMessage()).contains("markdown");
+                });
+    }
+
+    @Test
+    void aNormalMultiParagraphNarrativePasses() {
+        String narrative = "The deduction is not supported.\n\n" + BOL + " proves the goods shipped in full.";
+        DraftingAgent agent = agent(StubChatModel.text(narrativeJson(
+                "The deduction is not supported.\\n\\n" + BOL + " proves the goods shipped in full.")),
+                new RecordingTrace());
+
+        assertThat(agent.draft(claim(), digest()).narrative()).isEqualTo(narrative);
+    }
+
+    @Test
     void aNarrativeWithACodeFenceFails() {
         DraftingAgent agent = agent(StubChatModel.text(narrativeJson(BOL + " is attached. ```")),
                 new RecordingTrace());

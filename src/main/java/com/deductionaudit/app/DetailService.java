@@ -18,17 +18,16 @@ import java.util.UUID;
 @Service
 public class DetailService {
 
+    private static final ObjectMapper JSON = new ObjectMapper();
+
     private final DeductionStore store;
     private final WindowService windows;
     private final TraceRecorder trace;
-    private final ObjectMapper objectMapper;
 
-    public DetailService(DeductionStore store, WindowService windows, TraceRecorder trace,
-                         ObjectMapper objectMapper) {
+    public DetailService(DeductionStore store, WindowService windows, TraceRecorder trace) {
         this.store = store;
         this.windows = windows;
         this.trace = trace;
-        this.objectMapper = objectMapper;
     }
 
     public record AttemptView(
@@ -130,7 +129,7 @@ public class DetailService {
             }
         }
         DocumentView document = store.findDisputeDocument(id)
-                .map(row -> DocumentView.from(row, objectMapper))
+                .map(row -> DocumentView.from(row, JSON))
                 .orElse(null);
         return new DetailView(deduction.id(), deduction.retailerId(), retailerName, deduction.reasonCode(),
                 deduction.category() == null ? null : deduction.category().name(), deduction.amount(),

@@ -11,7 +11,9 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -47,59 +49,64 @@ public class EvidenceDigestBuilder {
     }
 
     private DigestItem resolve(Deduction deduction, String id) {
-        EvidenceReference reference = EvidenceReference.parse(id);
-        Map<String, Object> fields = new LinkedHashMap<>();
-        switch (reference.kind()) {
-            case ASN -> {
-                EvidenceStore.AsnRow row = evidence.asn(reference.key())
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "declaredQty", row.declaredQty());
-                put(fields, "shippedAt", iso(row.shippedAt()));
+        try {
+            EvidenceReference reference = EvidenceReference.parse(id);
+            Map<String, Object> fields = new LinkedHashMap<>();
+            switch (reference.kind()) {
+                case ASN -> {
+                    EvidenceStore.AsnRow row = evidence.asn(reference.key())
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "declaredQty", row.declaredQty());
+                    put(fields, "shippedAt", iso(row.shippedAt()));
+                }
+                case BOL -> {
+                    EvidenceStore.BolRow row = evidence.bol(reference.key())
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "shippedQty", row.shippedQty());
+                    put(fields, "shippedAt", iso(row.shippedAt()));
+                }
+                case POD -> {
+                    EvidenceStore.PodRow row = evidence.pod(reference.key())
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "receivedQty", row.receivedQty());
+                    put(fields, "receivedAt", iso(row.receivedAt()));
+                }
+                case PRICE -> {
+                    EvidenceStore.PriceRow row = evidence.priceAt(reference.key(),
+                                    LocalDate.parse(reference.qualifier()))
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "unitPrice", money(row.unitPrice()));
+                    put(fields, "validFrom", iso(row.validFrom()));
+                    put(fields, "validTo", iso(row.validTo()));
+                }
+                case INVOICE -> {
+                    EvidenceStore.InvoiceRow row = evidence.invoiceLine(reference.key())
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "qty", row.qty());
+                    put(fields, "unitPrice", money(row.unitPrice()));
+                }
+                case PROMO -> {
+                    EvidenceStore.ClauseRow row = evidence.clauses(reference.key()).stream()
+                            .filter(clause -> clause.clauseNo().equals(reference.qualifier()))
+                            .findFirst()
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "clauseNo", row.clauseNo());
+                    put(fields, "text", truncate(row.text()));
+                }
+                case SETTLE -> {
+                    EvidenceStore.SettlementRow row = evidence.settlement(reference.key())
+                            .orElseThrow(() -> unresolved(id));
+                    put(fields, "accruedAmount", money(row.accruedAmount()));
+                    put(fields, "settledAmount", money(row.settledAmount()));
+                    put(fields, "settledOn", iso(row.settledOn()));
+                }
+                case EDI812 -> put(fields, "deductionId", deduction.id().toString());
             }
-            case BOL -> {
-                EvidenceStore.BolRow row = evidence.bol(reference.key())
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "shippedQty", row.shippedQty());
-                put(fields, "shippedAt", iso(row.shippedAt()));
-            }
-            case POD -> {
-                EvidenceStore.PodRow row = evidence.pod(reference.key())
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "receivedQty", row.receivedQty());
-                put(fields, "receivedAt", iso(row.receivedAt()));
-            }
-            case PRICE -> {
-                EvidenceStore.PriceRow row = evidence.priceAt(reference.key(),
-                                LocalDate.parse(reference.qualifier()))
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "unitPrice", money(row.unitPrice()));
-                put(fields, "validFrom", iso(row.validFrom()));
-                put(fields, "validTo", iso(row.validTo()));
-            }
-            case INVOICE -> {
-                EvidenceStore.InvoiceRow row = evidence.invoiceLine(reference.key())
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "qty", row.qty());
-                put(fields, "unitPrice", money(row.unitPrice()));
-            }
-            case PROMO -> {
-                EvidenceStore.ClauseRow row = evidence.clauses(reference.key()).stream()
-                        .filter(clause -> clause.clauseNo().equals(reference.qualifier()))
-                        .findFirst()
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "clauseNo", row.clauseNo());
-                put(fields, "text", truncate(row.text()));
-            }
-            case SETTLE -> {
-                EvidenceStore.SettlementRow row = evidence.settlement(reference.key())
-                        .orElseThrow(() -> unresolved(id));
-                put(fields, "accruedAmount", money(row.accruedAmount()));
-                put(fields, "settledAmount", money(row.settledAmount()));
-                put(fields, "settledOn", iso(row.settledOn()));
-            }
-            case EDI812 -> put(fields, "deductionId", deduction.id().toString());
+            return new DigestItem(id, reference.kind().name(),
+                    Collections.unmodifiableMap(new LinkedHashMap<>(fields)));
+        } catch (IllegalArgumentException | DateTimeParseException e) {
+            throw ApiException.internal("DRAFT_INCONSISTENT", "cannot resolve evidence id " + id);
         }
-        return new DigestItem(id, reference.kind().name(), Map.copyOf(fields));
     }
 
     private static void put(Map<String, Object> fields, String name, Object value) {

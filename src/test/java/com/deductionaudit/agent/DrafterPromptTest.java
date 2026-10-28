@@ -65,6 +65,12 @@ class DrafterPromptTest {
     }
 
     @Test
+    void theContractStatesTheAmountOnlyOnce() {
+        assertThat(agent.systemMessage()).contains("state the amount once in the opening paragraph");
+        assertThat(agent.systemMessage()).contains("do not restate it in later paragraphs");
+    }
+
+    @Test
     void thePolicyTextIsIncludedInFull() {
         assertThat(agent.systemMessage()).contains(policy.text());
     }

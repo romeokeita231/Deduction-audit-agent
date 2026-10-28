@@ -46,7 +46,8 @@ public class DraftingAgent {
             Narrative rules:
               every evidence id you mention must come from the claim's closed set of references,
               supportingEvidence and basis; mention at least one of those ids; write 3 to 5 paragraphs
-              and 120 to 250 words.
+              and 120 to 250 words; state the amount once in the opening paragraph,
+              and do not restate it in later paragraphs.
             """;
 
     static final String SKELETON = """
@@ -165,8 +166,13 @@ public class DraftingAgent {
 
     private static void validate(Claim claim, String narrative) {
         String text = narrative.trim();
-        if (text.startsWith("#") || text.startsWith("-") || text.startsWith("*") || text.startsWith("|")) {
-            throw ApiException.internal("DRAFT_INCONSISTENT", "the narrative starts with a markdown marker");
+        for (String line : text.split("\n", -1)) {
+            String marker = line.trim();
+            if (marker.startsWith("#") || marker.startsWith("-") || marker.startsWith("*")
+                    || marker.startsWith("|")) {
+                throw ApiException.internal("DRAFT_INCONSISTENT",
+                        "the narrative contains a markdown line marker");
+            }
         }
         if (text.contains("```")) {
             throw ApiException.internal("DRAFT_INCONSISTENT", "the narrative contains a code fence");

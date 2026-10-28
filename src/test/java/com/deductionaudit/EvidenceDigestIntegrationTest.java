@@ -8,10 +8,12 @@ import com.deductionaudit.domain.EvidenceIds;
 import com.deductionaudit.domain.VerdictRecord;
 import com.deductionaudit.persistence.DeductionStore;
 import com.deductionaudit.shared.ApiException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -116,6 +118,48 @@ class EvidenceDigestIntegrationTest extends IntegrationTestBase {
                     assertThat(exception.code()).isEqualTo("DRAFT_INCONSISTENT");
                     assertThat(exception.getMessage()).contains("POD:SHP-NOPOD");
                 });
+    }
+
+    @Test
+    void theSerializedDigestKeepsTheFieldOrderAcrossBuilds() throws Exception {
+        Deduction deduction = store.find(UUID.fromString(SHORTAGE)).orElseThrow();
+        Claim claim = new Claim(deduction.id(), 1, "SHORTAGE", "480.00", "USD", Ask.REVERSE_DEDUCTION,
+                List.of(EvidenceIds.edi812(deduction.id())),
+                List.of("BOL:SHP-DISPUTE", "PRICE:SKU-1:2025-12-01", "INVOICE:INV-LOW"), List.of());
+
+        List<EvidenceDigestBuilder.DigestItem> first = builder.build(deduction, claim);
+        List<EvidenceDigestBuilder.DigestItem> second = builder.build(deduction, claim);
+
+        ObjectMapper json = new ObjectMapper();
+        assertThat(json.writeValueAsString(first)).isEqualTo(json.writeValueAsString(second));
+        assertThat(new ArrayList<>(item(first, "PRICE:SKU-1:2025-12-01").fields().keySet()))
+                .containsExactly("unitPrice", "validFrom", "validTo");
+        assertThat(new ArrayList<>(item(first, "INVOICE:INV-LOW").fields().keySet()))
+                .containsExactly("qty", "unitPrice");
+    }
+
+    @Test
+    void aMalformedIdFailsAsAnInternalInconsistencyNamingTheId() {
+        Deduction deduction = store.find(UUID.fromString(SHORTAGE)).orElseThrow();
+
+        assertThatThrownBy(() -> builder.build(deduction, claim(deduction, "PRICE:SKU-1:not-a-date")))
+                .isInstanceOfSatisfying(ApiException.class, exception -> {
+                    assertThat(exception.status()).isEqualTo(500);
+                    assertThat(exception.code()).isEqualTo("DRAFT_INCONSISTENT");
+                    assertThat(exception.getMessage()).contains("PRICE:SKU-1:not-a-date");
+                });
+
+        assertThatThrownBy(() -> builder.build(deduction, claim(deduction, "PROMO:doc")))
+                .isInstanceOfSatisfying(ApiException.class, exception -> {
+                    assertThat(exception.status()).isEqualTo(500);
+                    assertThat(exception.code()).isEqualTo("DRAFT_INCONSISTENT");
+                    assertThat(exception.getMessage()).contains("PROMO:doc");
+                });
+    }
+
+    private static Claim claim(Deduction deduction, String evidenceId) {
+        return new Claim(deduction.id(), 1, "SHORTAGE", "480.00", "USD", Ask.REVERSE_DEDUCTION,
+                List.of(evidenceId), List.of(), List.of());
     }
 
     private static Set<String> union(Claim claim) {

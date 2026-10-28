@@ -493,6 +493,22 @@ class PipelineIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void theDetailPageKeepsTheDocumentAfterTheDisputeIsLost() throws Exception {
+        evaluate(DISPUTE);
+        postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        ResponseEntity<String> lost = postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "LOST"));
+        assertThat(lost.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode detail = detail(DISPUTE);
+        assertThat(detail.path("status").asText()).isEqualTo("LOST");
+        assertThat(detail.path("document").isNull()).isFalse();
+        assertThat(detail.path("document").path("narrative").asText()).isEqualTo(fixtureNarrative(DISPUTE));
+        assertThat(getHtml("/deductions/" + DISPUTE).getBody())
+                .contains("Dispute document", fixtureNarrative(DISPUTE));
+    }
+
+    @Test
     void theDetailPageOmitsTheDocumentForAnUndisputedDeduction() {
         evaluate(STANDS);
         assertThat(detail(STANDS).path("document").isNull()).isTrue();

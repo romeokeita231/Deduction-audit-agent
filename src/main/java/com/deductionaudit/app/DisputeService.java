@@ -40,11 +40,12 @@ public class DisputeService {
                 .orElseThrow(() -> ApiException.notFound("deduction not found"));
         VerdictRecord verdict = actions.requireDisputable(deduction);
         Claim claim = Claim.from(deduction, verdict);
+        int evidenceVersion = store.evidenceVersion().version();
         List<EvidenceDigestBuilder.DigestItem> digest = digestBuilder.build(deduction, claim);
         DraftingAgent.DraftResult draft = draftingAgent.draft(claim, digest);
 
         DisputeDocument document = new DisputeDocument(claim, draft.narrative(),
-                objectMapper.valueToTree(digest), store.evidenceVersion().version(),
+                objectMapper.valueToTree(digest), evidenceVersion,
                 draft.promptVersion(), draft.model());
         ActionOutcome outcome = actions.dispute(id, submittedBy, note, document);
 
