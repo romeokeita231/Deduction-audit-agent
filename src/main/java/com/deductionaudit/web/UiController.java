@@ -2,6 +2,7 @@ package com.deductionaudit.web;
 
 import com.deductionaudit.app.ActionService;
 import com.deductionaudit.app.DetailService;
+import com.deductionaudit.app.DisputeService;
 import com.deductionaudit.app.EvaluationService;
 import com.deductionaudit.app.QueueService;
 import com.deductionaudit.domain.DeductionCategory;
@@ -27,13 +28,15 @@ public class UiController {
     private final DetailService details;
     private final EvaluationService evaluations;
     private final ActionService actions;
+    private final DisputeService disputes;
 
     public UiController(QueueService queue, DetailService details, EvaluationService evaluations,
-                        ActionService actions) {
+                        ActionService actions, DisputeService disputes) {
         this.queue = queue;
         this.details = details;
         this.evaluations = evaluations;
         this.actions = actions;
+        this.disputes = disputes;
     }
 
     @GetMapping(value = "/queue", produces = MediaType.TEXT_HTML_VALUE)
@@ -75,7 +78,7 @@ public class UiController {
                           @RequestParam(required = false) String submittedBy,
                           RedirectAttributes redirect) {
         try {
-            actions.dispute(id, submittedBy, note);
+            disputes.dispute(id, submittedBy, note);
         } catch (ApiException e) {
             redirect.addFlashAttribute("error", e.code() + ": " + e.getMessage());
         }

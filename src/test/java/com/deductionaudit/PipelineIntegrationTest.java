@@ -10,6 +10,11 @@ import org.springframework.http.ResponseEntity;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -394,6 +399,223 @@ class PipelineIntegrationTest extends IntegrationTestBase {
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "LOST"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    }
+
+    @Test
+    void disputeWritesTheDocumentAndTheDraftTrace() throws Exception {
+        evaluate(DISPUTE);
+        ResponseEntity<String> response = postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        JsonNode result = body(response);
+        assertThat(result.path("status").asText()).isEqualTo("DISPUTED");
+        assertThat(result.path("disputeId").asText()).isNotBlank();
+
+        JsonNode document = result.path("document");
+        assertThat(document.path("attemptNo").asInt()).isEqualTo(1);
+        assertThat(document.path("narrative").asText()).isEqualTo(fixtureNarrative(DISPUTE));
+        assertThat(document.path("digest").size()).isEqualTo(3);
+        assertThat(document.path("evidenceVersion").asInt()).isEqualTo(1);
+        assertThat(document.path("promptVersion").asText()).hasSize(12);
+        assertThat(document.path("model").asText()).isNotBlank();
+        assertThat(document.path("draftedAt").asText()).isNotBlank();
+
+        String narrative = document.path("narrative").asText();
+        assertThat(narrative.split("\\n\\s*\\n")).hasSizeBetween(3, 5);
+        assertThat(narrative.trim().split("\\s+")).hasSizeBetween(120, 250);
+
+        JsonNode claim = document.path("claim");
+        assertThat(claim.path("deductionId").asText()).isEqualTo(DISPUTE);
+        assertThat(claim.path("attemptNo").asInt()).isEqualTo(1);
+        assertThat(claim.path("category").asText()).isEqualTo("SHORTAGE");
+        assertThat(claim.path("amount").asText()).isEqualTo("480.00");
+        assertThat(claim.path("currency").asText()).isEqualTo("USD");
+        JsonNode evaluation = detail(DISPUTE).path("evaluation");
+        assertThat(texts(claim.path("references"))).isEqualTo(texts(evaluation.path("references")));
+        assertThat(texts(claim.path("supportingEvidence")))
+                .isEqualTo(texts(evaluation.path("supportingEvidence")));
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute WHERE deduction_id = ?::uuid",
+                Integer.class, DISPUTE)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute_document WHERE deduction_id = ?::uuid",
+                Integer.class, DISPUTE)).isEqualTo(1);
+
+        JsonNode detail = detail(DISPUTE);
+        assertThat(detail.path("document").path("narrative").asText())
+                .isEqualTo(document.path("narrative").asText());
+
+        List<String> digestIds = new ArrayList<>();
+        document.path("digest").forEach(item -> digestIds.add(item.path("evidenceId").asText()));
+        JsonNode draft = null;
+        int drafts = 0;
+        for (JsonNode entry : detail.path("trace")) {
+            if ("draft".equals(entry.path("type").asText())) {
+                draft = entry;
+                drafts++;
+            }
+        }
+        assertThat(drafts).isEqualTo(1);
+        assertThat(draft.path("name").asText()).isEqualTo("drafter");
+        assertThat(draft.path("attemptNo").asInt()).isEqualTo(1);
+        assertThat(draft.path("error").isNull()).isTrue();
+        assertThat(texts(draft.path("evidenceIds"))).isEqualTo(digestIds).hasSize(3);
+        assertThat(draft.path("request").asText()).contains("480.00");
+
+        ResponseEntity<String> html = getHtml("/deductions/" + DISPUTE);
+        assertThat(html.getBody()).contains("drafter", "BOL:SHP-DISPUTE");
+
+        ResponseEntity<String> again = postJson("/deductions/" + DISPUTE + "/dispute", Map.of());
+        assertThat(again.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute_document WHERE deduction_id = ?::uuid",
+                Integer.class, DISPUTE)).isEqualTo(1);
+    }
+
+    @Test
+    void theDetailPageRendersTheDisputeDocument() throws Exception {
+        evaluate(DISPUTE);
+        ResponseEntity<String> disputed = postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        assertThat(disputed.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        String page = getHtml("/deductions/" + DISPUTE).getBody();
+        assertThat(page).contains("Dispute document", fixtureNarrative(DISPUTE), "480.00 USD");
+    }
+
+    @Test
+    void theDetailPageKeepsTheDocumentAfterTheDisputeIsWon() throws Exception {
+        evaluate(DISPUTE);
+        postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        ResponseEntity<String> won = postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "WON"));
+        assertThat(won.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode detail = detail(DISPUTE);
+        assertThat(detail.path("status").asText()).isEqualTo("WON");
+        assertThat(detail.path("document").isNull()).isFalse();
+        assertThat(detail.path("document").path("narrative").asText()).isEqualTo(fixtureNarrative(DISPUTE));
+        assertThat(getHtml("/deductions/" + DISPUTE).getBody()).contains(fixtureNarrative(DISPUTE));
+    }
+
+    @Test
+    void theDetailPageKeepsTheDocumentAfterTheDisputeIsLost() throws Exception {
+        evaluate(DISPUTE);
+        postJson("/deductions/" + DISPUTE + "/dispute",
+                Map.of("submittedBy", "ar-1", "note", "carrier loss"));
+        ResponseEntity<String> lost = postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "LOST"));
+        assertThat(lost.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        JsonNode detail = detail(DISPUTE);
+        assertThat(detail.path("status").asText()).isEqualTo("LOST");
+        assertThat(detail.path("document").isNull()).isFalse();
+        assertThat(detail.path("document").path("narrative").asText()).isEqualTo(fixtureNarrative(DISPUTE));
+        assertThat(getHtml("/deductions/" + DISPUTE).getBody())
+                .contains("Dispute document", fixtureNarrative(DISPUTE));
+    }
+
+    @Test
+    void theDetailPageOmitsTheDocumentForAnUndisputedDeduction() {
+        evaluate(STANDS);
+        assertThat(detail(STANDS).path("document").isNull()).isTrue();
+        assertThat(getHtml("/deductions/" + STANDS).getBody()).doesNotContain("Dispute document");
+    }
+
+    @Test
+    void aMissingDraftIs503AndWritesNothing() {
+        JsonNode evaluation = evaluate(PROMO);
+        assertThat(evaluation.path("verdict").path("verdict").asText()).isEqualTo("DISPUTABLE");
+        Long version = jdbc.queryForObject("SELECT version FROM deduction WHERE id = ?::uuid",
+                Long.class, PROMO);
+
+        ResponseEntity<String> response = postJson("/deductions/" + PROMO + "/dispute", Map.of());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+        assertThat(body(response).path("code").asText()).isEqualTo("DRAFT_FAILED");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute WHERE deduction_id = ?::uuid",
+                Integer.class, PROMO)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute_document WHERE deduction_id = ?::uuid",
+                Integer.class, PROMO)).isZero();
+        JsonNode detail = detail(PROMO);
+        assertThat(detail.path("status").asText()).isEqualTo("AWAITING_ACTION");
+        assertThat(jdbc.queryForObject("SELECT version FROM deduction WHERE id = ?::uuid",
+                Long.class, PROMO)).isEqualTo(version);
+
+        JsonNode draft = singleDraft(detail.path("trace"));
+        assertThat(draft.path("error").asText()).isNotBlank();
+        assertThat(draft.path("response").isNull()).isTrue();
+    }
+
+    @Test
+    void aForgedNarrativeIs500AndWritesNothing() {
+        evaluate(PRICE_LOW);
+        Long version = jdbc.queryForObject("SELECT version FROM deduction WHERE id = ?::uuid",
+                Long.class, PRICE_LOW);
+
+        ResponseEntity<String> response = postJson("/deductions/" + PRICE_LOW + "/dispute", Map.of());
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+        JsonNode error = body(response);
+        assertThat(error.path("code").asText()).isEqualTo("DRAFT_INCONSISTENT");
+        assertThat(error.path("message").asText()).contains("POD:SHP-FORGED");
+
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute WHERE deduction_id = ?::uuid",
+                Integer.class, PRICE_LOW)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute_document WHERE deduction_id = ?::uuid",
+                Integer.class, PRICE_LOW)).isZero();
+        JsonNode detail = detail(PRICE_LOW);
+        assertThat(detail.path("status").asText()).isEqualTo("AWAITING_ACTION");
+        assertThat(jdbc.queryForObject("SELECT version FROM deduction WHERE id = ?::uuid",
+                Long.class, PRICE_LOW)).isEqualTo(version);
+
+        JsonNode draft = singleDraft(detail.path("trace"));
+        assertThat(draft.path("error").asText()).contains("POD:SHP-FORGED");
+        assertThat(draft.path("response").isNull()).isTrue();
+    }
+
+    @Test
+    void aConcurrentDisputeWritesExactlyOneDocument() throws Exception {
+        evaluate(DISPUTE);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        CountDownLatch start = new CountDownLatch(1);
+        try {
+            List<Future<Integer>> futures = new ArrayList<>();
+            for (int i = 0; i < 2; i++) {
+                Callable<Integer> call = () -> {
+                    start.await();
+                    return postJson("/deductions/" + DISPUTE + "/dispute", Map.of()).getStatusCode().value();
+                };
+                futures.add(pool.submit(call));
+            }
+            start.countDown();
+            List<Integer> statuses = new ArrayList<>();
+            for (Future<Integer> future : futures) {
+                statuses.add(future.get());
+            }
+            assertThat(statuses).containsExactlyInAnyOrder(200, 409);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM dispute_document WHERE deduction_id = ?::uuid",
+                    Integer.class, DISPUTE)).isEqualTo(1);
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    private JsonNode singleDraft(JsonNode trace) {
+        JsonNode draft = null;
+        int count = 0;
+        for (JsonNode entry : trace) {
+            if ("draft".equals(entry.path("type").asText())) {
+                draft = entry;
+                count++;
+            }
+        }
+        assertThat(count).isEqualTo(1);
+        return draft;
+    }
+
+    private String fixtureNarrative(String deductionId) throws Exception {
+        try (var stream = getClass().getResourceAsStream("/replay/scenarios.json")) {
+            JsonNode root = json.readTree(stream);
+            String text = root.path("drafts").path(deductionId).get(0).path("text").asText();
+            return json.readTree(text).path("narrative").asText();
+        }
     }
 
     @Test

@@ -1,3 +1,4 @@
+DELETE FROM dispute_document;
 DELETE FROM dispute;
 DELETE FROM verdict;
 DELETE FROM evaluation_attempt;

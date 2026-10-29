@@ -1,10 +1,16 @@
 package com.deductionaudit.replay;
 
 import java.util.List;
+import java.util.Map;
 
 public record ReplayScenario(
         String defaultModel,
-        java.util.Map<String, ReplayDeduction> deductions) {
+        Map<String, ReplayDeduction> deductions,
+        Map<String, List<ReplayDraft>> drafts) {
+
+    public ReplayScenario {
+        drafts = drafts == null ? Map.of() : Map.copyOf(drafts);
+    }
 
     public record ReplayDeduction(List<ReplayAttempt> attempts) {
     }
@@ -16,5 +22,8 @@ public record ReplayScenario(
     }
 
     public record ReplayToolCall(String name, String arguments) {
+    }
+
+    public record ReplayDraft(String text) {
     }
 }

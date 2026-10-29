@@ -3,6 +3,7 @@ package com.deductionaudit.web;
 import com.deductionaudit.app.ActionOutcome;
 import com.deductionaudit.app.ActionService;
 import com.deductionaudit.app.DetailService;
+import com.deductionaudit.app.DisputeService;
 import com.deductionaudit.app.EvaluationResult;
 import com.deductionaudit.app.EvaluationService;
 import com.deductionaudit.app.QueueService;
@@ -30,13 +31,15 @@ public class DeductionController {
     private final DetailService details;
     private final EvaluationService evaluations;
     private final ActionService actions;
+    private final DisputeService disputes;
 
     public DeductionController(QueueService queue, DetailService details, EvaluationService evaluations,
-                               ActionService actions) {
+                               ActionService actions, DisputeService disputes) {
         this.queue = queue;
         this.details = details;
         this.evaluations = evaluations;
         this.actions = actions;
+        this.disputes = disputes;
     }
 
     public record DisputeRequest(String submittedBy, String note) {
@@ -80,10 +83,11 @@ public class DeductionController {
     }
 
     @PostMapping(value = "/deductions/{id}/dispute", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ActionOutcome dispute(@PathVariable UUID id,
-                                 @RequestBody(required = false) DisputeRequest request) {
+    public DisputeResponse dispute(@PathVariable UUID id,
+                                   @RequestBody(required = false) DisputeRequest request) {
         DisputeRequest body = request == null ? new DisputeRequest(null, null) : request;
-        return actions.dispute(id, body.submittedBy(), body.note());
+        DisputeService.Disputed disputed = disputes.dispute(id, body.submittedBy(), body.note());
+        return DisputeResponse.from(disputed.outcome(), disputed.document());
     }
 
     @PostMapping(value = "/deductions/{id}/close", produces = MediaType.APPLICATION_JSON_VALUE,

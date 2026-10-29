@@ -109,6 +109,12 @@ class InstrumentedToolCallbackTest {
         }
 
         @Override
+        public void recordDraft(UUID deductionId, int attemptNo, String model, String request,
+                                String response, Integer inputTokens, Integer outputTokens, long durationMs,
+                                List<String> evidenceIds, String error) {
+        }
+
+        @Override
         public List<TraceEntry> read(UUID deductionId, int attemptNo) {
             return List.copyOf(tools);
         }

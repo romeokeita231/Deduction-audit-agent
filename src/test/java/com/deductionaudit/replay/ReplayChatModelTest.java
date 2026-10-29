@@ -1,8 +1,10 @@
 package com.deductionaudit.replay;
 
+import com.deductionaudit.shared.PromptMarker;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
@@ -34,6 +36,11 @@ class ReplayChatModelTest {
             messages.add(AssistantMessage.builder().content("round " + i).build());
         }
         return new Prompt(messages);
+    }
+
+    private static Prompt draftPrompt(String deductionId) {
+        return new Prompt(List.of(new SystemMessage(PromptMarker.DRAFT),
+                new UserMessage("EDI812:" + deductionId)));
     }
 
     @Test
@@ -79,5 +86,51 @@ class ReplayChatModelTest {
         assertThatThrownBy(() -> model.call(new Prompt(List.of(new UserMessage("no id here")))))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("no deduction id");
+    }
+
+    @Test
+    void theDraftMarkerSelectsTheDraftsChannel() {
+        ChatResponse draft = model.call(draftPrompt(SHORTAGE));
+        assertThat(draft.hasToolCalls()).isFalse();
+        assertThat(draft.getResult().getOutput().getText()).contains("\"narrative\"");
+
+        ChatResponse evaluation = model.call(prompt(SHORTAGE));
+        assertThat(evaluation.hasToolCalls()).isTrue();
+    }
+
+    @Test
+    void draftAndEvaluationCountersDoNotShareState() {
+        assertThat(model.call(prompt(SHORTAGE)).hasToolCalls()).isTrue();
+        assertThat(model.call(draftPrompt(SHORTAGE)).getResult().getOutput().getText())
+                .contains("\"narrative\"");
+
+        ChatResponse secondRound = model.call(promptAfterAssistants(SHORTAGE, 1));
+        assertThat(secondRound.getResult().getOutput().getText()).contains("\"verdict\":\"DISPUTABLE\"");
+    }
+
+    @Test
+    void eachDeductionServesItsOwnDraft() {
+        assertThat(model.call(draftPrompt("55555555-5555-5555-5555-555555555555"))
+                .getResult().getOutput().getText()).contains("POD:SHP-FORGED");
+    }
+
+    @Test
+    void aMissingDraftEntryFailsFast() {
+        assertThatThrownBy(() -> model.call(draftPrompt("99999999-9999-9999-9999-999999999999")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("no replay draft 1 for deduction 99999999");
+    }
+
+    @Test
+    void resetClearsBothChannels() {
+        model.call(draftPrompt(SHORTAGE));
+        model.call(draftPrompt(SHORTAGE));
+        model.call(prompt(SHORTAGE));
+
+        model.reset();
+
+        assertThat(model.call(draftPrompt(SHORTAGE)).getResult().getOutput().getText())
+                .contains("\"narrative\"");
+        assertThat(model.call(prompt(SHORTAGE)).hasToolCalls()).isTrue();
     }
 }

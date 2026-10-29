@@ -1,5 +1,14 @@
 {
   "defaultModel": "replay",
+  "drafts": {
+    "11111111-1111-1111-1111-111111111111": [
+      {"text": "{\"narrative\":\"This letter concerns the shortage deduction of 480.00 USD raised against shipment SHP-DISPUTE under EDI812:11111111-1111-1111-1111-111111111111. We reviewed the shipping record and the proof of delivery, and we conclude that the deduction is not supported.\\n\\nThe bill of lading BOL:SHP-DISPUTE shows that 120 units left our warehouse in good condition and were handed to the carrier. The proof of delivery POD:SHP-DISPUTE confirms that 96 units were accepted at the destination. The gap of 24 units therefore opened while the goods were in transit, after they had left our control.\\n\\nBecause the shortage did not occur on our side, we ask you to reverse the deduction in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"},
+      {"text": "{\"narrative\":\"This letter concerns the shortage deduction of 480.00 USD raised against shipment SHP-DISPUTE under EDI812:11111111-1111-1111-1111-111111111111. We reviewed the shipping record and the proof of delivery, and we conclude that the deduction is not supported.\\n\\nThe bill of lading BOL:SHP-DISPUTE shows that 120 units left our warehouse in good condition and were handed to the carrier. The proof of delivery POD:SHP-DISPUTE confirms that 96 units were accepted at the destination. The gap of 24 units therefore opened while the goods were in transit, after they had left our control.\\n\\nBecause the shortage did not occur on our side, we ask you to reverse the deduction in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"}
+    ],
+    "55555555-5555-5555-5555-555555555555": [
+      {"text": "{\"narrative\":\"The deduction is not supported. POD:SHP-FORGED shows that the goods arrived at the destination in full.\"}"}
+    ]
+  },
   "deductions": {
     "11111111-1111-1111-1111-111111111111": {
       "attempts": [

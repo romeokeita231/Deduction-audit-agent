@@ -92,7 +92,7 @@ Validator 的输出，独立于生命周期的三个取值：
 2. `DISPUTED` 之后窗口不再计时：AR 已确认提交（文书已导出），逾期风险转移到零售商侧。
 3. `EXPIRED` 只能从 `NEW` / `PARKED` / `AWAITING_ACTION` 进入，且必须满足 `now > windowEndsAt`。
 4. 同一 Deduction 同时最多一个 `EVALUATING`（Postgres advisory lock）。
-5. `DISPUTED` 必须存在对应的 Dispute 记录，且 `openedAt` 非空；`WON` / `LOST` 必须 `closedAt` 与 `result` 非空。
+5. `DISPUTED` 必须存在对应的 Dispute 记录、`openedAt` 非空，且恰有一行 `dispute_document`；`WON` / `LOST` 必须 `closedAt` 与 `result` 非空。
 6. `windowEndsAt` 在入库时一次性算定（扣款日 + 该零售商窗口天数），此后只读。**它是零售商本地时区的 `LocalDate`，不是 `Instant`**：到期日当天仍可提交，只有 `now(零售商店区).toLocalDate() > windowEndsAt` 才算过期。时钟一律按店区算，不按服务器时区算——否则跨时区会白丢或白赚一天。
 7. `INCONCLUSIVE` 永不允许进入 `DISPUTED`。没有证据的争议会同时拉低引用精确率和真实胜率，而且它把"Agent 敢说不知道"这件事变成了空话。
 
