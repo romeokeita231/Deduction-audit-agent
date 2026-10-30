@@ -33,6 +33,8 @@ import java.util.concurrent.Future;
 public class EvalCaseDriver {
 
     public static final int MAX_CONCURRENCY = 8;
+    public static final String DRAFT_UNAVAILABLE = "DRAFT_UNAVAILABLE";
+    public static final String DRAFT_UNAVAILABLE_ERROR = DRAFT_UNAVAILABLE + ": draft missing";
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -73,7 +75,7 @@ public class EvalCaseDriver {
                 if (e.status() != 503) {
                     throw e;
                 }
-                error = e.code() + ": " + e.getMessage();
+                error = DRAFT_UNAVAILABLE_ERROR;
             }
         }
 

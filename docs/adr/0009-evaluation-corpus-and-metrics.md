@@ -22,7 +22,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 
 成因不需要新的判定逻辑：`ParkedReason.forInconclusive` 已经分开——`missingEvidence` 非空 → `EVIDENCE_GAP`，为空 → `POLICY_GAP`。指标 1 比对 `(verdict, parkedReason)`，所以对无规则 case 的断言就是免费的：`parkedReason == POLICY_GAP`。
 
-防兜底另加一条：oracle 里 `INCONCLUSIVE` + 空 `missingEvidence` 即"无规则可裁"（`POLICY_GAP`），它的成因有两种——**同级规则对同一事实给出相反结论**，以及**该事实没有任何规则覆盖**。两种成因在 oracle 里各对应一个闭合枚举值（`SAME_LEVEL_CONFLICT` / `NO_RULE_COVERS_THE_FACTS`），分支名与成因一一登记在同一个常量表里；任何未登记的分支直接在运行时抛异常，**禁止匿名或兜底分支**。每条 case 把命中的分支名写进 NDJSON，CI 断言无规则格的每一条都命中这张表里的某个分支。再抽 3 条做盲判复核。
+防兜底另加一条：oracle 里 `INCONCLUSIVE` + 空 `missingEvidence` 即"无规则可裁"（`POLICY_GAP`），它只有两种成因——**同级规则对同一事实给出相反结论**（`PolicyGapCause.SAME_LEVEL_CONFLICT`）、**在政策中找不到覆盖该事实的规则**（`PolicyGapCause.NO_RULE_COVERS_THE_FACTS`）。两个枚举值就是全部合法分支，每个 `oracleBranch` 都必须登记到其中一个；未登记的 branch 在运行时直接抛异常。**禁止匿名分支，也禁止兜底分支**——"其他情况一律 `POLICY_GAP`"这种写法会让无规则可裁重新变成不可数。每条 case 把命中的分支名写进 NDJSON，CI 断言无规则格的每一条都命中这张闭合表里的某个分支。再抽 3 条做盲判复核。
 
 ## 指标 1：四态比对
 
@@ -49,13 +49,13 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 
 ## NDJSON 契约与归一化
 
-`eval:live` 与 CI 的 fixture 路径**只差 profile**（live 与 replay），导出器是同一个类，NDJSON 只有一份格式。全量行一行一 case，字段：`schemaVersion` / `caseId` / `attemptNo` / `status` / `parkedReason` / `verdict` / `claim` / `narrative` / `digest` / `latency` / `toolCalls` / `contract` / `oracleBranch` / `expectedState` / `expectedParkedReason` / `expectedSupportingEvidence`。三个 `expected*` 字段让每行自包含——第三方脚本只吃 `results.ndjson` 就能复算指标 1 与指标 2；**基线行也保留它们**，静态标签不影响确定性，反而让基线 diff 顺带盯住标注漂移。
+`eval:live` 与 CI 的 fixture 路径**只差 profile**（live 与 replay），导出器是同一个类，NDJSON 只有一份格式。全量行一行一 case，字段：`schemaVersion` / `caseId` / `attemptNo` / `status` / `error` / `parkedReason` / `verdict` / `claim` / `narrative` / `digest` / `latency` / `toolCalls` / `contract` / `oracleBranch` / `expectedState` / `expectedParkedReason` / `expectedSupportingEvidence`。三个 `expected*` 字段让每行自包含——第三方脚本只吃 `results.ndjson` 就能复算指标 1 与指标 2；**基线行也保留它们**，静态标签不影响确定性，反而让基线 diff 顺带盯住标注漂移。
 
 - **全量行与基线行是同一套导出器的两种输出模式，不是两套格式。** 导出器只产全量行；**写基线文件时**套用白名单：去 `latency`、去每个 toolCall 的 `duration`（只留 `name` 与 `count`）、去 timestamp、trace id、运行时生成的 verdict/attempt UUID。`docs/eval/reports/*/results.ndjson` 保留 `latency`，供人读。
 - 不这么写清，第一次 CI 必红在 `latency` 上，然后有人把检查删了——正是本 ADR 反复警告的那个失败模式。白名单属于导出器，不属于 diff 脚本。
 - **指标代码只有一份，在 Python 侧。** Java 只负责跑管线并导出 NDJSON，两边都吃同一个文件——不许"harness 读 PG、CI 读文件"两条输入路径。
 - **单 case driver 是两段**：`EvaluationService.evaluate`，若 `DISPUTABLE` 再 `DisputeService.draft`，然后导出。只打 evaluate 的话指标 2/3 分母为 0，报告空转。并发 N ≤ 8，受 Hikari 默认 10 约束。
-- **`schemaVersion` 每行都带**，不是文件头；diff 前先比版本再比内容。字段增删改名即 +1，`metrics.json` 与每行 NDJSON 同版本。
+- **`schemaVersion` 每行都带**，不是文件头；diff 前先比版本再比内容。字段增删改名即 +1，`metrics.json` 与每行 NDJSON 同版本。**`schemaVersion` 2 对应本次新增的 `error` 字段**：起草失败时写明原因，不再静默降级成一个空 narrative。`error` 的值只允许"稳定码 + 固定文本"（如 `DRAFT_UNAVAILABLE: draft missing`），不含 attempt 序号、时间戳或任何运行时变量——序号只出现在 `attemptNo` 里，否则基线每跑一次就抖一次。
 
 ## CI 与存档
 
