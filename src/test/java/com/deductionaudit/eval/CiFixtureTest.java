@@ -92,6 +92,27 @@ class CiFixtureTest extends IntegrationTestBase {
                 "the fixture took " + elapsedMillis + " ms, above the two-minute budget");
     }
 
+    @Test
+    void theBaselineMetricsMirrorTheManifestsNegativeControls() throws IOException {
+        JsonNode metrics = JSON.readTree(BASELINE.resolve("metrics.json").toFile());
+        JsonNode controls = metrics.get("negativeControls");
+        assertNotNull(controls, "metrics.json must carry negativeControls, even when it is empty");
+        List<String> fromMetrics = new ArrayList<>();
+        for (JsonNode node : controls) {
+            assertTrue(node.hasNonNull("why"),
+                    "the negative control " + node.get("caseId").asText() + " must carry its why");
+            fromMetrics.add(node.get("caseId").asText() + " | " + node.get("why").asText());
+        }
+        List<String> fromManifest = new ArrayList<>();
+        for (ManifestEntry entry : manifest()) {
+            if (entry.why() != null) {
+                fromManifest.add(entry.caseId() + " | " + entry.why());
+            }
+        }
+        assertEquals(fromManifest, fromMetrics,
+                "the manifest and metrics.json disagree on which cases are negative controls");
+    }
+
     private record ManifestEntry(String caseId, String why) {
     }
 

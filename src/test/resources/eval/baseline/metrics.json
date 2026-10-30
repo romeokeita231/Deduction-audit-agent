@@ -7,7 +7,13 @@
   "policy": {
     "sha256": "3dde491d3d993fb2dbaa3a9d727e03864285fc8e223a25179ed614a5d89fc2d8"
   },
-  "commit": "e1faed744fa5af2b347ca6bfd3028ae1677de582",
+  "negativeControls": [
+    {
+      "caseId": "PRICE-SUPPORTS_RETAILER-01",
+      "why": "draft unavailable must surface as DRAFT_UNAVAILABLE and lower the yield"
+    }
+  ],
+  "commit": "6f682a92bd605d3911c4e007e97ac53d211b2e29",
   "metric1": {
     "microExactMatch": {
       "k": 15,

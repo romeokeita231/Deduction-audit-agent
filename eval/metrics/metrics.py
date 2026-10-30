@@ -229,7 +229,22 @@ def metric3(rows):
     }
 
 
-def compute(rows, corpus_sha="", policy_sha="", commit=""):
+def negative_controls(path):
+    if not Path(path).exists():
+        raise MetricsError("the manifest is missing: " + str(path))
+    try:
+        manifest = json.loads(Path(path).read_text(encoding="utf-8"))
+    except json.JSONDecodeError as error:
+        raise MetricsError("the manifest is not json: " + str(error)) from error
+    controls = []
+    for entry in manifest.get("cases") or []:
+        why = entry.get("why")
+        if why:
+            controls.append({"caseId": entry["caseId"], "why": why})
+    return controls
+
+
+def compute(rows, corpus_sha="", policy_sha="", commit="", controls=None):
     versions = {row.get("schemaVersion") for row in rows}
     if len(versions) != 1:
         raise MetricsError("the export mixes schema versions")
@@ -237,6 +252,7 @@ def compute(rows, corpus_sha="", policy_sha="", commit=""):
         "schemaVersion": versions.pop(),
         "corpus": {"sha256": corpus_sha, "cases": len(rows)},
         "policy": {"sha256": policy_sha},
+        "negativeControls": list(controls or []),
         "commit": commit,
         "metric1": metric1(rows),
         "metric2": metric2(rows),
@@ -250,13 +266,16 @@ def main(argv=None):
     parser.add_argument("--output")
     parser.add_argument("--corpus")
     parser.add_argument("--policy")
+    parser.add_argument("--manifest")
     arguments = parser.parse_args(argv)
     root = Path(__file__).resolve().parents[2]
     corpus = Path(arguments.corpus) if arguments.corpus else root / "src/main/resources/eval/corpus"
     policy = Path(arguments.policy) if arguments.policy else root / "src/main/resources/policy/audit-policy.md"
+    manifest = Path(arguments.manifest) if arguments.manifest else root / "src/test/resources/eval/ci-manifest.json"
     try:
         rows = load_rows(arguments.ndjson)
-        report = compute(rows, corpus_sha256(corpus), policy_sha256(policy), commit_sha(root))
+        report = compute(rows, corpus_sha256(corpus), policy_sha256(policy), commit_sha(root),
+                         negative_controls(manifest))
     except MetricsError as error:
         print("metrics failed: " + str(error), file=sys.stderr)
         return 2
