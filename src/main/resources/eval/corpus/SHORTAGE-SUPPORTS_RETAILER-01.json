@@ -1,41 +1,41 @@
 {
-  "caseId": "SHORTAGE-SUPPORTS_RETAILER-01",
-  "matrix": {
-    "category": "SHORTAGE",
-    "situation": "SUPPORTS_RETAILER"
+  "caseId" : "SHORTAGE-SUPPORTS_RETAILER-01",
+  "matrix" : {
+    "category" : "SHORTAGE",
+    "situation" : "SUPPORTS_RETAILER"
   },
-  "seed": 1001,
-  "retailerId": "NYC",
-  "reasonCode": "SHORT",
-  "amount": 480.00,
-  "currency": "USD",
-  "receivedDaysAgo": 3,
-  "deductionDaysAgo": 5,
-  "windowDays": 30,
-  "shipmentId": "SHP-EVAL-0001",
-  "sku": null,
-  "invoiceNo": null,
-  "asn": {
-    "declaredQty": 120,
-    "shippedDaysAgo": 9
+  "seed" : 20260318,
+  "retailerId" : "NYC",
+  "reasonCode" : "SHORT",
+  "amount" : 280.00,
+  "currency" : "USD",
+  "receivedDaysAgo" : 1,
+  "deductionDaysAgo" : 17,
+  "windowDays" : 30,
+  "shipmentId" : "SHP-EVAL-0008",
+  "sku" : null,
+  "invoiceNo" : null,
+  "asn" : {
+    "declaredQty" : 83,
+    "shippedDaysAgo" : 33
   },
-  "bol": {
-    "shippedQty": 120,
-    "shippedDaysAgo": 9
+  "bol" : {
+    "shippedQty" : 83,
+    "shippedDaysAgo" : 33
   },
-  "pod": {
-    "receivedQty": 96,
-    "receivedDaysAgo": 6
+  "pod" : {
+    "receivedQty" : 79,
+    "receivedDaysAgo" : 22
   },
-  "priceIntervals": [],
-  "invoiceLine": null,
-  "agreements": [],
-  "settlement": null,
-  "expectedState": "DISPUTABLE",
-  "expectedParkedReason": null,
-  "expectedSupportingEvidence": [
-    "BOL:SHP-EVAL-0001",
-    "POD:SHP-EVAL-0001"
+  "priceIntervals" : [ ],
+  "invoiceLine" : null,
+  "agreements" : [ ],
+  "settlement" : null,
+  "expectedState" : "DISPUTABLE",
+  "expectedParkedReason" : null,
+  "expectedSupportingEvidence" : [
+    "BOL:SHP-EVAL-0008",
+    "POD:SHP-EVAL-0008"
   ],
-  "oracleBranch": "SHORTAGE_POD_BELOW_BOL"
+  "oracleBranch" : "SHORTAGE_POD_BELOW_BOL"
 }

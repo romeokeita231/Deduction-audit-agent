@@ -1,0 +1,41 @@
+{
+  "caseId" : "SHORTAGE-SUPPORTS_RETAILER-06",
+  "matrix" : {
+    "category" : "SHORTAGE",
+    "situation" : "SUPPORTS_RETAILER"
+  },
+  "seed" : 20260323,
+  "retailerId" : "NYC",
+  "reasonCode" : "SHORT",
+  "amount" : 390.00,
+  "currency" : "USD",
+  "receivedDaysAgo" : 1,
+  "deductionDaysAgo" : 11,
+  "windowDays" : 30,
+  "shipmentId" : "SHP-EVAL-0013",
+  "sku" : null,
+  "invoiceNo" : null,
+  "asn" : {
+    "declaredQty" : 94,
+    "shippedDaysAgo" : 23
+  },
+  "bol" : {
+    "shippedQty" : 94,
+    "shippedDaysAgo" : 23
+  },
+  "pod" : {
+    "receivedQty" : 89,
+    "receivedDaysAgo" : 16
+  },
+  "priceIntervals" : [ ],
+  "invoiceLine" : null,
+  "agreements" : [ ],
+  "settlement" : null,
+  "expectedState" : "DISPUTABLE",
+  "expectedParkedReason" : null,
+  "expectedSupportingEvidence" : [
+    "BOL:SHP-EVAL-0013",
+    "POD:SHP-EVAL-0013"
+  ],
+  "oracleBranch" : "SHORTAGE_POD_BELOW_BOL"
+}

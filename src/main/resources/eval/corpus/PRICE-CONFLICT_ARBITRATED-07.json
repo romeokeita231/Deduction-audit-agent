@@ -1,0 +1,46 @@
+{
+  "caseId" : "PRICE-CONFLICT_ARBITRATED-07",
+  "matrix" : {
+    "category" : "PRICE_VARIANCE",
+    "situation" : "CONFLICT_ARBITRATED"
+  },
+  "seed" : 20260373,
+  "retailerId" : "NYC",
+  "reasonCode" : "PRICE",
+  "amount" : 230.00,
+  "currency" : "USD",
+  "receivedDaysAgo" : 1,
+  "deductionDaysAgo" : 13,
+  "windowDays" : 30,
+  "shipmentId" : null,
+  "sku" : "SKU-EVAL-0063",
+  "invoiceNo" : "INV-EVAL-0063",
+  "asn" : null,
+  "bol" : null,
+  "pod" : null,
+  "priceIntervals" : [
+    {
+      "validFromDaysAgo" : 43,
+      "validToDaysAgo" : null,
+      "unitPrice" : 11.50
+    },
+    {
+      "validFromDaysAgo" : 103,
+      "validToDaysAgo" : 58,
+      "unitPrice" : 12.50
+    }
+  ],
+  "invoiceLine" : {
+    "qty" : 22,
+    "unitPrice" : 11.50
+  },
+  "agreements" : [ ],
+  "settlement" : null,
+  "expectedState" : "DEDUCTION_STANDS",
+  "expectedParkedReason" : null,
+  "expectedSupportingEvidence" : [
+    "PRICE:SKU-EVAL-0063:@43",
+    "INVOICE:INV-EVAL-0063"
+  ],
+  "oracleBranch" : "PRICE_NON_COVERING_INTERVAL_IGNORED"
+}

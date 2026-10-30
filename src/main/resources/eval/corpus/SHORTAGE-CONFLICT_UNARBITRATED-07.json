@@ -1,0 +1,38 @@
+{
+  "caseId" : "SHORTAGE-CONFLICT_UNARBITRATED-07",
+  "matrix" : {
+    "category" : "SHORTAGE",
+    "situation" : "CONFLICT_UNARBITRATED"
+  },
+  "seed" : 20260345,
+  "retailerId" : "NYC",
+  "reasonCode" : "SHORT",
+  "amount" : 250.00,
+  "currency" : "USD",
+  "receivedDaysAgo" : 3,
+  "deductionDaysAgo" : 10,
+  "windowDays" : 30,
+  "shipmentId" : "SHP-EVAL-0035",
+  "sku" : null,
+  "invoiceNo" : null,
+  "asn" : {
+    "declaredQty" : 51,
+    "shippedDaysAgo" : 23
+  },
+  "bol" : {
+    "shippedQty" : 51,
+    "shippedDaysAgo" : 23
+  },
+  "pod" : {
+    "receivedQty" : 53,
+    "receivedDaysAgo" : 15
+  },
+  "priceIntervals" : [ ],
+  "invoiceLine" : null,
+  "agreements" : [ ],
+  "settlement" : null,
+  "expectedState" : "INCONCLUSIVE",
+  "expectedParkedReason" : "POLICY_GAP",
+  "expectedSupportingEvidence" : [ ],
+  "oracleBranch" : "SHORTAGE_POD_ABOVE_BOL"
+}
