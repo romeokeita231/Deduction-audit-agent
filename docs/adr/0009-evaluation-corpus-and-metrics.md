@@ -55,12 +55,12 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 - 不这么写清，第一次 CI 必红在 `latency` 上，然后有人把检查删了——正是本 ADR 反复警告的那个失败模式。白名单属于导出器，不属于 diff 脚本。
 - **指标代码只有一份，在 Python 侧。** Java 只负责跑管线并导出 NDJSON，两边都吃同一个文件——不许"harness 读 PG、CI 读文件"两条输入路径。
 - **单 case driver 是两段**：`EvaluationService.evaluate`，若 `DISPUTABLE` 再 `DisputeService.draft`，然后导出。只打 evaluate 的话指标 2/3 分母为 0，报告空转。并发 N ≤ 8，受 Hikari 默认 10 约束。
-- **`schemaVersion` 每行都带**，不是文件头；diff 前先比版本再比内容。字段增删改名即 +1，`metrics.json` 与每行 NDJSON 同版本。**`schemaVersion` 2 对应本次新增的 `error` 字段**：起草失败时写明原因，不再静默降级成一个空 narrative。`error` 的值只允许"稳定码 + 固定文本"（如 `DRAFT_UNAVAILABLE: draft missing`），不含 attempt 序号、时间戳或任何运行时变量——序号只出现在 `attemptNo` 里，否则基线每跑一次就抖一次。
+- **`schemaVersion` 每行都带**，不是文件头；diff 前先比版本再比内容。字段增删改名即 +1，`metrics.json` 与每行 NDJSON 同版本。边界：`schemaVersion` 描述的是 NDJSON **行契约**，`metrics.json` 从属于同一版本；只在 `metrics.json` 顶层新增派生字段（如 `negativeControls`）、而 15 行逐字节未变时，不动版本号。**`schemaVersion` 2 对应本次新增的 `error` 字段**：起草失败时写明原因，不再静默降级成一个空 narrative。`error` 的值只允许"稳定码 + 固定文本"（如 `DRAFT_UNAVAILABLE: draft missing`），不含 attempt 序号、时间戳或任何运行时变量——序号只出现在 `attemptNo` 里，否则基线每跑一次就抖一次。
 
 ## CI 与存档
 
-- CI 跑 15 条全覆盖子集（三类 × 五种情形各 1 条），清单是 `src/test/resources/eval/ci-manifest.json`，只列 `caseId`，语料正文仍从 main 的那一份读，不造第二套。
-- **cassette 分 `verdict` 与 `drafts` 两个 channel，manifest 里每个 `DISPUTABLE` 的 case 两路都必须有条目。** 少了 `drafts`，起草那段直接走 503，指标 3 头条的分母是 0，而报告只会显示一个空转的 100%。
+- CI 跑 15 条全覆盖子集（三类 × 五种情形各 1 条），清单是 `src/test/resources/eval/ci-manifest.json`，每项为 `{caseId, why?}`：正例不写 `why`，负向对照必须写清意图，语料正文仍从 main 的那一份读，不造第二套。
+- **cassette 分 `verdict` 与 `drafts` 两个 channel，除负向对照外，manifest 里每个 `DISPUTABLE` 的 case 两路都必须有条目。** 少了 `drafts` 又不标 `why`，起草那段直接走 503，指标 3 头条的分母是 0，而报告只会显示一个空转的 100%；标了 `why` 的就是负向对照，产出率的分母照算、分子少 1，`error` 与 `narrative: null` 必须同时出现在该行。
 - **失败条目必须带 `why`**，写成负向对照（例如"模型引用封闭集外 ID，必须被 validator 拒"），并给 `expected: {status, parkedReason}`。CI 断言混淆矩阵逐格一致，断的不是"分数 ≥ X"。没标 `why` 的低基线就是把草率固化。
 - 快照 diff 的是归一化后的 NDJSON 与 `metrics.json`，提交在 `src/test/resources/eval/baseline/`。
 - **报告存档进仓库**：`docs/eval/reports/<YYYY-MM-DD>-<sha>/` 下 `report.md` + `metrics.json` + `results.ndjson`。`metrics.json` 钉住 corpus 的 sha256、`policy/audit-policy.md` 的 sha256、commit sha、`schemaVersion` 四项，否则一年后语料改过，旧报告的分母无法复原。CI 只 diff，不写报告；报告由人跑 `eval:live` 后提交。
