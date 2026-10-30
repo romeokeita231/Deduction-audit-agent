@@ -10,7 +10,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 - **时间是相对偏移，不是绝对时间戳。** JSON 存 `receivedDaysAgo` 这类偏移，loader 用注入的 `Clock` 解成 `Instant`。`eval:live` 用真时钟，CI 用固定的 `2026-03-10T06:59:00Z`。写死绝对时间必然一边废掉：要么 live 里全部过期，要么 CI 结果依赖墙钟。
 - **`caseId` 固定，扣款主键由 `UUID.nameUUIDFromBytes(caseId)` 确定性派生。** 用 JDK 自带的 v3，不手写 v5 的 SHA-1 加版本位手术；配一条 golden UUID 断言防命名空间漂移，命名空间常量固定在 loader 里。
 - **oracle 在 `src/main/java/com/deductionaudit/eval/oracle`**，只 import `domain` 的枚举，**禁止 import `agent/validators`**——那会变成用同一份实现测自己。它读的是与 prompt 同一个 `classpath:policy/audit-policy.md`，同源不需要额外机制。
-- **政策 hash 是 oracle 源码里的编译期常量**，不是旁挂的 `.sha256` 文件。放文件里，改政策的人顺手也能改 hash，闸门就没了。放源码里，政策一改必然产生一次可见的代码 diff，oracle 拒绝运行直到有人确认。常量存**全量 sha256**，启动时断言它的前 12 位等于 `EvaluationAgent.policyVersion()`（`PolicyProvider` 里就是 `sha256(text).substring(0, 12)`）——同一文件的第二个哈希放在别处，迟早出"`policyVersion` 变了而 oracle 常量没变"的悬案。
+- **政策 hash 是 oracle 源码里的编译期常量**，不是旁挂的 `.sha256` 文件。放文件里，改政策的人顺手也能改 hash，闸门就没了。放源码里，政策一改必然产生一次可见的代码 diff，oracle 拒绝运行直到有人确认。常量存**全量 sha256**，启动时断言它的前 12 位等于 `PolicyProvider.version()`（`new PolicyProvider()` 无依赖，`EvaluationAgent.policyVersion()` 只是原样委托它）。常量算法钉死为 `PolicyProvider.sha256(text)`：不要用 `Files.readAllBytes` 走原始字节——`PolicyProvider` 是对解码后的字符串再编码求哈希，两条路径在 BOM 或异常字节上会分叉，而这个常量的全部意义就是与它同源。
 - **标注由 oracle 生成，人不写答案。** 人只设计冲突结构，变量由带种子的生成器随机化；种子写进每个 case 的 JSON。生成只跑一次，提交后的 JSON 是唯一事实源，CI 不重跑生成器。
 - **"由 oracle 生成"必须由一条对账测试兜住，否则它只是一句声明。** 测试对全部语料重跑 oracle，逐字段比对 JSON 里的 `expectedState` / `expectedParkedReason` / `expectedSupportingEvidence` / `oracleBranch`，不一致即红。改了 oracle 规则却忘了重生成标注，红的就是这条。
 - **空集写成空数组，不省略字段。** `POLICY_GAP` 与"证据缺失"两格的 `expectedSupportingEvidence` 一律 `[]`，否则对账测试天天在 `null` 与 `[]` 之间抖。
