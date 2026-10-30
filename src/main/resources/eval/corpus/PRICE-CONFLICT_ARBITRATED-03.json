@@ -1,46 +1,52 @@
 {
-  "caseId" : "PRICE-CONFLICT_ARBITRATED-03",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "CONFLICT_ARBITRATED"
-  },
-  "seed" : 20260369,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 390.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 4,
-  "deductionDaysAgo" : 11,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0059",
-  "invoiceNo" : "INV-EVAL-0059",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 41,
-      "validToDaysAgo" : null,
-      "unitPrice" : 10.00
+  "facts" : {
+    "caseId" : "PRICE-CONFLICT_ARBITRATED-03",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "CONFLICT_ARBITRATED"
     },
-    {
-      "validFromDaysAgo" : 101,
-      "validToDaysAgo" : 56,
-      "unitPrice" : 11.00
+    "seed" : 20260369,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 390.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 4,
+    "deductionDaysAgo" : 11,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0059",
+      "invoiceNo" : "INV-EVAL-0059",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 41,
+          "validToDaysAgo" : null,
+          "unitPrice" : 10.00
+        },
+        {
+          "validFromDaysAgo" : 101,
+          "validToDaysAgo" : 56,
+          "unitPrice" : 11.00
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 10,
+        "unitPrice" : 9.00
+      },
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : {
-    "qty" : 10,
-    "unitPrice" : 9.00
   },
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DISPUTABLE",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "PRICE:SKU-EVAL-0059:@41",
-    "INVOICE:INV-EVAL-0059"
-  ],
-  "oracleBranch" : "PRICE_NON_COVERING_INTERVAL_IGNORED"
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PRICE:SKU-EVAL-0059:@41",
+      "INVOICE:INV-EVAL-0059"
+    ],
+    "oracleBranch" : "PRICE_NON_COVERING_INTERVAL_IGNORED"
+  }
 }

@@ -1,41 +1,47 @@
 {
-  "caseId" : "PRICE-SUPPORTS_SUPPLIER-02",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "SUPPORTS_SUPPLIER"
-  },
-  "seed" : 20260347,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 180.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 2,
-  "deductionDaysAgo" : 11,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0037",
-  "invoiceNo" : "INV-EVAL-0037",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 41,
-      "validToDaysAgo" : null,
-      "unitPrice" : 19.50
+  "facts" : {
+    "caseId" : "PRICE-SUPPORTS_SUPPLIER-02",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "SUPPORTS_SUPPLIER"
+    },
+    "seed" : 20260347,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 180.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 11,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0037",
+      "invoiceNo" : "INV-EVAL-0037",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 41,
+          "validToDaysAgo" : null,
+          "unitPrice" : 19.50
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 17,
+        "unitPrice" : 20.00
+      },
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : {
-    "qty" : 17,
-    "unitPrice" : 20.00
   },
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DEDUCTION_STANDS",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "PRICE:SKU-EVAL-0037:@41",
-    "INVOICE:INV-EVAL-0037"
-  ],
-  "oracleBranch" : "PRICE_INVOICE_AT_OR_ABOVE_MASTER"
+  "expectation" : {
+    "expectedState" : "DEDUCTION_STANDS",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PRICE:SKU-EVAL-0037:@41",
+      "INVOICE:INV-EVAL-0037"
+    ],
+    "oracleBranch" : "PRICE_INVOICE_AT_OR_ABOVE_MASTER"
+  }
 }

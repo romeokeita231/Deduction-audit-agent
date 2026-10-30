@@ -1,47 +1,53 @@
 {
-  "caseId" : "PROMOTION-EVIDENCE_MISSING-05",
-  "matrix" : {
-    "category" : "PROMOTION",
-    "situation" : "EVIDENCE_MISSING"
-  },
-  "seed" : 20260399,
-  "retailerId" : "NYC",
-  "reasonCode" : "PROMO",
-  "amount" : 260.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 1,
-  "deductionDaysAgo" : 13,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0089",
-  "invoiceNo" : null,
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [ ],
-  "invoiceLine" : null,
-  "agreements" : [
-    {
-      "docId" : "PA-EVAL-0089",
-      "validFromDaysAgo" : 73,
-      "validToDaysAgo" : null,
-      "clauses" : [
+  "facts" : {
+    "caseId" : "PROMOTION-EVIDENCE_MISSING-05",
+    "cell" : {
+      "category" : "PROMOTION",
+      "situation" : "EVIDENCE_MISSING"
+    },
+    "seed" : 20260399,
+    "retailerId" : "NYC",
+    "reasonCode" : "PROMO",
+    "amount" : 260.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 1,
+    "deductionDaysAgo" : 13,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0089",
+      "invoiceNo" : null,
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [
         {
-          "clauseNo" : "3.1",
-          "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
-          "effect" : "SUPPORTS_ACCRUAL"
-        },
-        {
-          "clauseNo" : "3.2",
-          "text" : "The rebate is settled within thirty days after the rebate window closes.",
-          "effect" : "NEUTRAL"
+          "docId" : "PA-EVAL-0089",
+          "validFromDaysAgo" : 73,
+          "validToDaysAgo" : null,
+          "clauses" : [
+            {
+              "clauseNo" : "3.1",
+              "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
+              "effect" : "SUPPORTS_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.2",
+              "text" : "The rebate is settled within thirty days after the rebate window closes.",
+              "effect" : "NEUTRAL"
+            }
+          ]
         }
-      ]
+      ],
+      "settlement" : null
     }
-  ],
-  "settlement" : null,
-  "expectedState" : "INCONCLUSIVE",
-  "expectedParkedReason" : "EVIDENCE_GAP",
-  "expectedSupportingEvidence" : [ ],
-  "oracleBranch" : "PROMOTION_MISSING_SETTLEMENT"
+  },
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "EVIDENCE_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PROMOTION_MISSING_SETTLEMENT"
+  }
 }

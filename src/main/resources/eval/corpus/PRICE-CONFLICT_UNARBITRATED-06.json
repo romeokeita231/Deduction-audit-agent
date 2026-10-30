@@ -1,43 +1,49 @@
 {
-  "caseId" : "PRICE-CONFLICT_UNARBITRATED-06",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "CONFLICT_UNARBITRATED"
-  },
-  "seed" : 20260379,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 220.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 2,
-  "deductionDaysAgo" : 12,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0069",
-  "invoiceNo" : "INV-EVAL-0069",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 42,
-      "validToDaysAgo" : null,
-      "unitPrice" : 11.50
+  "facts" : {
+    "caseId" : "PRICE-CONFLICT_UNARBITRATED-06",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "CONFLICT_UNARBITRATED"
     },
-    {
-      "validFromDaysAgo" : 22,
-      "validToDaysAgo" : 7,
-      "unitPrice" : 12.50
+    "seed" : 20260379,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 220.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 12,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0069",
+      "invoiceNo" : "INV-EVAL-0069",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 42,
+          "validToDaysAgo" : null,
+          "unitPrice" : 11.50
+        },
+        {
+          "validFromDaysAgo" : 22,
+          "validToDaysAgo" : 7,
+          "unitPrice" : 12.50
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 29,
+        "unitPrice" : 11.75
+      },
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : {
-    "qty" : 29,
-    "unitPrice" : 11.75
   },
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "INCONCLUSIVE",
-  "expectedParkedReason" : "POLICY_GAP",
-  "expectedSupportingEvidence" : [ ],
-  "oracleBranch" : "PRICE_OVERLAPPING_INTERVALS_CONFLICT"
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "POLICY_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PRICE_OVERLAPPING_INTERVALS_CONFLICT"
+  }
 }

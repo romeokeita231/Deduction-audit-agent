@@ -1,41 +1,47 @@
 {
-  "caseId" : "SHORTAGE-SUPPORTS_SUPPLIER-05",
-  "matrix" : {
-    "category" : "SHORTAGE",
-    "situation" : "SUPPORTS_SUPPLIER"
+  "facts" : {
+    "caseId" : "SHORTAGE-SUPPORTS_SUPPLIER-05",
+    "cell" : {
+      "category" : "SHORTAGE",
+      "situation" : "SUPPORTS_SUPPLIER"
+    },
+    "seed" : 20260315,
+    "retailerId" : "NYC",
+    "reasonCode" : "SHORT",
+    "amount" : 400.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 4,
+    "deductionDaysAgo" : 10,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : "SHP-EVAL-0005",
+      "sku" : null,
+      "invoiceNo" : null,
+      "asn" : {
+        "declaredQty" : 37,
+        "shippedDaysAgo" : 23
+      },
+      "bol" : {
+        "shippedQty" : 37,
+        "shippedDaysAgo" : 23
+      },
+      "pod" : {
+        "receivedQty" : 37,
+        "receivedDaysAgo" : 15
+      },
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
   },
-  "seed" : 20260315,
-  "retailerId" : "NYC",
-  "reasonCode" : "SHORT",
-  "amount" : 400.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 4,
-  "deductionDaysAgo" : 10,
-  "windowDays" : 30,
-  "shipmentId" : "SHP-EVAL-0005",
-  "sku" : null,
-  "invoiceNo" : null,
-  "asn" : {
-    "declaredQty" : 37,
-    "shippedDaysAgo" : 23
-  },
-  "bol" : {
-    "shippedQty" : 37,
-    "shippedDaysAgo" : 23
-  },
-  "pod" : {
-    "receivedQty" : 37,
-    "receivedDaysAgo" : 15
-  },
-  "priceIntervals" : [ ],
-  "invoiceLine" : null,
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DEDUCTION_STANDS",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "BOL:SHP-EVAL-0005",
-    "POD:SHP-EVAL-0005"
-  ],
-  "oracleBranch" : "SHORTAGE_POD_EQUALS_BOL"
+  "expectation" : {
+    "expectedState" : "DEDUCTION_STANDS",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "BOL:SHP-EVAL-0005",
+      "POD:SHP-EVAL-0005"
+    ],
+    "oracleBranch" : "SHORTAGE_POD_EQUALS_BOL"
+  }
 }

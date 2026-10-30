@@ -1,41 +1,47 @@
 {
-  "caseId" : "PRICE-SUPPORTS_RETAILER-01",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "SUPPORTS_RETAILER"
-  },
-  "seed" : 20260353,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 210.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 2,
-  "deductionDaysAgo" : 13,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0043",
-  "invoiceNo" : "INV-EVAL-0043",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 43,
-      "validToDaysAgo" : null,
-      "unitPrice" : 18.50
+  "facts" : {
+    "caseId" : "PRICE-SUPPORTS_RETAILER-01",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "SUPPORTS_RETAILER"
+    },
+    "seed" : 20260353,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 210.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 13,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0043",
+      "invoiceNo" : "INV-EVAL-0043",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 43,
+          "validToDaysAgo" : null,
+          "unitPrice" : 18.50
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 12,
+        "unitPrice" : 18.00
+      },
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : {
-    "qty" : 12,
-    "unitPrice" : 18.00
   },
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DISPUTABLE",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "PRICE:SKU-EVAL-0043:@43",
-    "INVOICE:INV-EVAL-0043"
-  ],
-  "oracleBranch" : "PRICE_INVOICE_BELOW_MASTER"
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PRICE:SKU-EVAL-0043:@43",
+      "INVOICE:INV-EVAL-0043"
+    ],
+    "oracleBranch" : "PRICE_INVOICE_BELOW_MASTER"
+  }
 }

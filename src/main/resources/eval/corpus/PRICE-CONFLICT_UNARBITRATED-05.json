@@ -1,43 +1,49 @@
 {
-  "caseId" : "PRICE-CONFLICT_UNARBITRATED-05",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "CONFLICT_UNARBITRATED"
-  },
-  "seed" : 20260378,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 120.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 1,
-  "deductionDaysAgo" : 19,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0068",
-  "invoiceNo" : "INV-EVAL-0068",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 49,
-      "validToDaysAgo" : null,
-      "unitPrice" : 18.50
+  "facts" : {
+    "caseId" : "PRICE-CONFLICT_UNARBITRATED-05",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "CONFLICT_UNARBITRATED"
     },
-    {
-      "validFromDaysAgo" : 29,
-      "validToDaysAgo" : 14,
-      "unitPrice" : 19.50
+    "seed" : 20260378,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 120.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 1,
+    "deductionDaysAgo" : 19,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0068",
+      "invoiceNo" : "INV-EVAL-0068",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 49,
+          "validToDaysAgo" : null,
+          "unitPrice" : 18.50
+        },
+        {
+          "validFromDaysAgo" : 29,
+          "validToDaysAgo" : 14,
+          "unitPrice" : 19.50
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 29,
+        "unitPrice" : 18.75
+      },
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : {
-    "qty" : 29,
-    "unitPrice" : 18.75
   },
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "INCONCLUSIVE",
-  "expectedParkedReason" : "POLICY_GAP",
-  "expectedSupportingEvidence" : [ ],
-  "oracleBranch" : "PRICE_OVERLAPPING_INTERVALS_CONFLICT"
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "POLICY_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PRICE_OVERLAPPING_INTERVALS_CONFLICT"
+  }
 }

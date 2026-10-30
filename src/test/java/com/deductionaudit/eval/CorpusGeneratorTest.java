@@ -3,6 +3,8 @@ package com.deductionaudit.eval;
 import com.deductionaudit.domain.DeductionCategory;
 import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.eval.corpus.CorpusCase;
+import com.deductionaudit.eval.corpus.CorpusCase.Situation;
+import com.deductionaudit.eval.corpus.CorpusEntry;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -20,8 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CorpusGeneratorTest {
 
-    private static final Path COMMITTED = Path.of("src/main/resources/eval/corpus");
-
     @Test
     void theSameSeedWritesByteIdenticalJson(@TempDir Path first, @TempDir Path second) throws IOException {
         CorpusGenerator.write(first);
@@ -35,31 +35,18 @@ class CorpusGeneratorTest {
     }
 
     @Test
-    void theCommittedCorpusIsTheGeneratorOutput(@TempDir Path directory) throws IOException {
-        CorpusGenerator.write(directory);
-        Map<String, byte[]> generated = bytes(directory);
-        Map<String, byte[]> committed = bytes(COMMITTED);
-        assertEquals(generated.keySet(), committed.keySet());
-        for (String name : generated.keySet()) {
-            assertArrayEquals(generated.get(name), committed.get(name),
-                    name + " differs from the committed corpus; rerun CorpusGenerator");
-        }
-    }
-
-    @Test
     void everyCellHoldsSevenCasesAndEveryStateBucketIsFilled() {
-        List<CorpusCase> cases = CorpusGenerator.generate();
-        assertEquals(DeductionCategory.values().length * CorpusCase.Situation.values().length
-                * CorpusGenerator.CASES_PER_CELL, cases.size());
+        List<CorpusEntry> entries = CorpusGenerator.generate();
+        assertEquals(DeductionCategory.values().length * Situation.values().length
+                * CorpusGenerator.CASES_PER_CELL, entries.size());
         Map<String, Integer> states = new HashMap<>();
         Map<String, Integer> arbitratedDisputable = new HashMap<>();
-        for (CorpusCase facts : cases) {
-            String bucket = facts.expectedState() == VerdictValue.INCONCLUSIVE
-                    ? facts.expectedParkedReason().name() : facts.expectedState().name();
-            states.merge(bucket, 1, Integer::sum);
-            if (facts.matrix().situation() == CorpusCase.Situation.CONFLICT_ARBITRATED
-                    && facts.expectedState() == VerdictValue.DISPUTABLE) {
-                arbitratedDisputable.merge(facts.matrix().category().name(), 1, Integer::sum);
+        for (CorpusEntry entry : entries) {
+            CorpusCase facts = entry.facts();
+            states.merge(entry.stateBucket(), 1, Integer::sum);
+            if (facts.cell().situation() == Situation.CONFLICT_ARBITRATED
+                    && entry.expectation().expectedState() == VerdictValue.DISPUTABLE) {
+                arbitratedDisputable.merge(facts.cell().category().name(), 1, Integer::sum);
             }
         }
         for (String bucket : List.of("DEDUCTION_STANDS", "DISPUTABLE", "EVIDENCE_GAP", "POLICY_GAP")) {

@@ -78,12 +78,31 @@ class CorpusLoaderTest {
             assertFalse(corpus.isEmpty());
             for (Path file : corpus) {
                 JsonNode node = JSON.readTree(file.toFile());
-                for (String field : List.of("priceIntervals", "agreements", "expectedSupportingEvidence")) {
-                    assertTrue(node.has(field), file.getFileName() + " omits " + field);
-                    assertTrue(node.get(field).isArray(), file.getFileName() + " " + field + " is not an array");
+                JsonNode evidence = node.get("facts").get("evidence");
+                for (String field : List.of("priceIntervals", "agreements")) {
+                    assertTrue(evidence.has(field), file.getFileName() + " omits " + field);
+                    assertTrue(evidence.get(field).isArray(), file.getFileName() + " " + field + " is not an array");
                 }
+                JsonNode expected = node.get("expectation").get("expectedSupportingEvidence");
+                assertTrue(expected.isArray(), file.getFileName() + " expectedSupportingEvidence is not an array");
             }
         }
+    }
+
+    @Test
+    void deferredPriceTokensRoundTripAgainstTheCommittedCorpus() {
+        int tokens = 0;
+        for (CorpusLoader.LoadedCase loaded : loader().load(FIXED)) {
+            for (String token : loaded.expectation().expectedSupportingEvidence()) {
+                EvidenceToken.PriceOffset offset = EvidenceToken.parsePrice(token);
+                if (offset == null) {
+                    continue;
+                }
+                assertEquals(token, offset.token(), loaded.facts().caseId());
+                tokens++;
+            }
+        }
+        assertEquals(21, tokens, "the committed corpus holds twenty-one deferred price tokens");
     }
 
     @Test

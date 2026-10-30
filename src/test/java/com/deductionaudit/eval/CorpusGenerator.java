@@ -8,14 +8,15 @@ import com.deductionaudit.eval.corpus.CorpusCase.Asn;
 import com.deductionaudit.eval.corpus.CorpusCase.Bol;
 import com.deductionaudit.eval.corpus.CorpusCase.Clause;
 import com.deductionaudit.eval.corpus.CorpusCase.ClauseEffect;
+import com.deductionaudit.eval.corpus.CorpusCase.EvalCell;
+import com.deductionaudit.eval.corpus.CorpusCase.Evidence;
 import com.deductionaudit.eval.corpus.CorpusCase.InvoiceLine;
-import com.deductionaudit.eval.corpus.CorpusCase.Matrix;
 import com.deductionaudit.eval.corpus.CorpusCase.Pod;
 import com.deductionaudit.eval.corpus.CorpusCase.PriceInterval;
 import com.deductionaudit.eval.corpus.CorpusCase.Settlement;
 import com.deductionaudit.eval.corpus.CorpusCase.Situation;
+import com.deductionaudit.eval.corpus.CorpusEntry;
 import com.deductionaudit.eval.oracle.Oracle;
-import com.deductionaudit.eval.oracle.OracleExpectation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -59,15 +61,13 @@ public final class CorpusGenerator {
         write(target);
     }
 
-    public static List<CorpusCase> generate() {
-        List<CorpusCase> cases = new ArrayList<>();
+    public static List<CorpusEntry> generate() {
+        List<CorpusEntry> cases = new ArrayList<>();
         for (DeductionCategory category : DeductionCategory.values()) {
             for (Situation situation : Situation.values()) {
                 for (int index = 0; index < CASES_PER_CELL; index++) {
                     int ordinal = ordinal(category, situation, index);
-                    CorpusCase facts = facts(category, situation, index, ordinal);
-                    OracleExpectation expectation = ORACLE.expectation(facts);
-                    cases.add(annotated(facts, expectation));
+                    cases.add(facts(category, situation, index, ordinal));
                 }
             }
         }
@@ -83,17 +83,17 @@ public final class CorpusGenerator {
                     Files.delete(path);
                 }
             }
-            for (CorpusCase facts : generate()) {
-                JSON.writeValue(directory.resolve(facts.caseId() + ".json").toFile(), facts);
+            for (CorpusEntry entry : generate()) {
+                JSON.writeValue(directory.resolve(entry.facts().caseId() + ".json").toFile(), entry);
             }
         } catch (IOException e) {
             throw new UncheckedIOException("the evaluation corpus cannot be written", e);
         }
     }
 
-    private static void validate(List<CorpusCase> cases) {
+    private static void validate(List<CorpusEntry> cases) {
         Map<DeductionCategory, Map<Situation, Integer>> cells = new EnumMap<>(DeductionCategory.class);
-        Map<String, Integer> states = new java.util.LinkedHashMap<>();
+        Map<String, Integer> states = new LinkedHashMap<>();
         for (String state : List.of("DEDUCTION_STANDS", "DISPUTABLE", "EVIDENCE_GAP", "POLICY_GAP")) {
             states.put(state, 0);
         }
@@ -102,12 +102,13 @@ public final class CorpusGenerator {
             cells.put(category, new EnumMap<>(Situation.class));
             arbitratedDisputable.put(category, 0);
         }
-        for (CorpusCase facts : cases) {
-            cells.get(facts.matrix().category()).merge(facts.matrix().situation(), 1, Integer::sum);
-            states.merge(stateBucket(facts), 1, Integer::sum);
-            if (facts.matrix().situation() == Situation.CONFLICT_ARBITRATED
-                    && facts.expectedState() == VerdictValue.DISPUTABLE) {
-                arbitratedDisputable.merge(facts.matrix().category(), 1, Integer::sum);
+        for (CorpusEntry entry : cases) {
+            CorpusCase facts = entry.facts();
+            cells.get(facts.cell().category()).merge(facts.cell().situation(), 1, Integer::sum);
+            states.merge(entry.stateBucket(), 1, Integer::sum);
+            if (facts.cell().situation() == Situation.CONFLICT_ARBITRATED
+                    && entry.expectation().expectedState() == VerdictValue.DISPUTABLE) {
+                arbitratedDisputable.merge(facts.cell().category(), 1, Integer::sum);
             }
         }
         for (DeductionCategory category : DeductionCategory.values()) {
@@ -129,61 +130,32 @@ public final class CorpusGenerator {
         }
     }
 
-    private static String stateBucket(CorpusCase facts) {
-        if (facts.expectedState() == VerdictValue.INCONCLUSIVE) {
-            return facts.expectedParkedReason().name();
-        }
-        return facts.expectedState().name();
+    private record CategorySpec(String prefix, String reasonCode, Evidence evidence) {
     }
 
-    private static CorpusCase annotated(CorpusCase facts, OracleExpectation expectation) {
-        return new CorpusCase(facts.caseId(), facts.matrix(), facts.seed(), facts.retailerId(),
-                facts.reasonCode(), facts.amount(), facts.currency(), facts.receivedDaysAgo(),
-                facts.deductionDaysAgo(), facts.windowDays(), facts.shipmentId(), facts.sku(),
-                facts.invoiceNo(), facts.asn(), facts.bol(), facts.pod(), facts.priceIntervals(),
-                facts.invoiceLine(), facts.agreements(), facts.settlement(),
-                expectation.expectedState(), expectation.expectedParkedReason(),
-                expectation.expectedSupportingEvidence(), expectation.oracleBranch());
-    }
-
-    private static CorpusCase facts(DeductionCategory category, Situation situation, int index,
-                                    int ordinal) {
+    private static CorpusEntry facts(DeductionCategory category, Situation situation, int index,
+                                     int ordinal) {
         Random random = new Random(SEED + ordinal);
         int receivedDaysAgo = 1 + random.nextInt(5);
         int deductionDaysAgo = 7 + random.nextInt(13);
         BigDecimal amount = money(12000 + random.nextInt(30) * 1000);
-        String shipmentId = "SHP-EVAL-" + String.format("%04d", ordinal);
-        String sku = "SKU-EVAL-" + String.format("%04d", ordinal);
-        String invoiceNo = "INV-EVAL-" + String.format("%04d", ordinal);
-        String docId = "PA-EVAL-" + String.format("%04d", ordinal);
-        String reasonCode = switch (category) {
-            case SHORTAGE -> "SHORT";
-            case PRICE_VARIANCE -> "PRICE";
-            case PROMOTION -> "PROMO";
+        CategorySpec spec = switch (category) {
+            case SHORTAGE -> new CategorySpec("SHORTAGE", "SHORT",
+                    shortage(situation, index, random, deductionDaysAgo, shipmentId(ordinal)));
+            case PRICE_VARIANCE -> new CategorySpec("PRICE", "PRICE",
+                    price(situation, index, random, deductionDaysAgo, sku(ordinal), invoiceNo(ordinal)));
+            case PROMOTION -> new CategorySpec("PROMOTION", "PROMO",
+                    promotion(situation, index, random, deductionDaysAgo, sku(ordinal), docId(ordinal)));
         };
-        CorpusCase blank = switch (category) {
-            case SHORTAGE -> shortage(situation, index, random, receivedDaysAgo, deductionDaysAgo,
-                    amount, shipmentId);
-            case PRICE_VARIANCE -> price(situation, index, random, receivedDaysAgo, deductionDaysAgo,
-                    amount, sku, invoiceNo);
-            case PROMOTION -> promotion(situation, index, random, receivedDaysAgo, deductionDaysAgo,
-                    amount, sku, docId);
-        };
-        return new CorpusCase(
-                prefix(category) + "-" + situation + "-" + String.format("%02d", index + 1),
-                new Matrix(category, situation), SEED + ordinal, "NYC", reasonCode, amount, "USD",
-                receivedDaysAgo, deductionDaysAgo, 30,
-                category == DeductionCategory.SHORTAGE ? shipmentId : blank.shipmentId(),
-                category == DeductionCategory.PRICE_VARIANCE || category == DeductionCategory.PROMOTION
-                        ? sku : blank.sku(),
-                category == DeductionCategory.PRICE_VARIANCE ? invoiceNo : blank.invoiceNo(),
-                blank.asn(), blank.bol(), blank.pod(), blank.priceIntervals(), blank.invoiceLine(),
-                blank.agreements(), blank.settlement(), null, null, List.of(), null);
+        CorpusCase facts = new CorpusCase(
+                spec.prefix() + "-" + situation + "-" + String.format("%02d", index + 1),
+                new EvalCell(category, situation), SEED + ordinal, "NYC", spec.reasonCode(), amount, "USD",
+                receivedDaysAgo, deductionDaysAgo, 30, spec.evidence());
+        return new CorpusEntry(facts, ORACLE.expectation(facts));
     }
 
-    private static CorpusCase shortage(Situation situation, int index, Random random,
-                                       int receivedDaysAgo, int deductionDaysAgo, BigDecimal amount,
-                                       String shipmentId) {
+    private static Evidence shortage(Situation situation, int index, Random random,
+                                     int deductionDaysAgo, String shipmentId) {
         int shipped = 20 + random.nextInt(80);
         int shippedDaysAgo = deductionDaysAgo + 10 + random.nextInt(10);
         int receivedDays = deductionDaysAgo + 5;
@@ -207,14 +179,11 @@ public final class CorpusGenerator {
             case SUPPORTS_SUPPLIER -> {
             }
         }
-        return new CorpusCase(null, null, 0, null, null, amount, "USD", receivedDaysAgo,
-                deductionDaysAgo, 30, shipmentId, null, null, asn, bol, pod, List.of(), null,
-                List.of(), null, null, null, List.of(), null);
+        return Evidence.shipment(shipmentId, asn, bol, pod);
     }
 
-    private static CorpusCase price(Situation situation, int index, Random random,
-                                    int receivedDaysAgo, int deductionDaysAgo, BigDecimal amount,
-                                    String sku, String invoiceNo) {
+    private static Evidence price(Situation situation, int index, Random random,
+                                  int deductionDaysAgo, String sku, String invoiceNo) {
         int masterCents = 1000 + 50 * random.nextInt(20);
         BigDecimal master = money(masterCents);
         BigDecimal invoice = switch (situation) {
@@ -236,14 +205,11 @@ public final class CorpusGenerator {
         }
         InvoiceLine line = situation == Situation.EVIDENCE_MISSING ? null
                 : new InvoiceLine(10 + random.nextInt(20), invoice);
-        return new CorpusCase(null, null, 0, null, null, amount, "USD", receivedDaysAgo,
-                deductionDaysAgo, 30, null, sku, invoiceNo, null, null, null, List.copyOf(intervals),
-                line, List.of(), null, null, null, List.of(), null);
+        return Evidence.price(sku, invoiceNo, intervals, line);
     }
 
-    private static CorpusCase promotion(Situation situation, int index, Random random,
-                                        int receivedDaysAgo, int deductionDaysAgo, BigDecimal amount,
-                                        String sku, String docId) {
+    private static Evidence promotion(Situation situation, int index, Random random,
+                                      int deductionDaysAgo, String sku, String docId) {
         BigDecimal accrued = money(50000 + random.nextInt(20) * 1000);
         BigDecimal settled = situation == Situation.SUPPORTS_RETAILER
                 || (situation == Situation.CONFLICT_ARBITRATED && index < 4)
@@ -263,9 +229,7 @@ public final class CorpusGenerator {
         Agreement agreement = new Agreement(docId, deductionDaysAgo + 60, null, List.copyOf(clauses));
         Settlement settlement = situation == Situation.EVIDENCE_MISSING ? null
                 : new Settlement(docId, accrued, settled, deductionDaysAgo + 10);
-        return new CorpusCase(null, null, 0, null, null, amount, "USD", receivedDaysAgo,
-                deductionDaysAgo, 30, null, sku, null, null, null, null, List.of(), null,
-                List.of(agreement), settlement, null, null, List.of(), null);
+        return Evidence.promotion(sku, List.of(agreement), settlement);
     }
 
     private static final String SUPPORTING_CLAUSE =
@@ -277,12 +241,20 @@ public final class CorpusGenerator {
     private static final String CONFLICTING_CLAUSE =
             "Retailer earns a five percent rebate; the summary in the audit system understates it.";
 
-    private static String prefix(DeductionCategory category) {
-        return switch (category) {
-            case SHORTAGE -> "SHORTAGE";
-            case PRICE_VARIANCE -> "PRICE";
-            case PROMOTION -> "PROMOTION";
-        };
+    private static String shipmentId(int ordinal) {
+        return "SHP-EVAL-" + String.format("%04d", ordinal);
+    }
+
+    private static String sku(int ordinal) {
+        return "SKU-EVAL-" + String.format("%04d", ordinal);
+    }
+
+    private static String invoiceNo(int ordinal) {
+        return "INV-EVAL-" + String.format("%04d", ordinal);
+    }
+
+    private static String docId(int ordinal) {
+        return "PA-EVAL-" + String.format("%04d", ordinal);
     }
 
     private static int ordinal(DeductionCategory category, Situation situation, int index) {

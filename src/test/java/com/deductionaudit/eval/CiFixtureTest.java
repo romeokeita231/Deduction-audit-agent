@@ -44,6 +44,7 @@ class CiFixtureTest extends IntegrationTestBase {
     @Test
     void theManifestRunsThroughReplayAndMatchesTheCommittedBaseline(@TempDir Path work)
             throws IOException, InterruptedException {
+        long started = System.nanoTime();
         List<String> caseIds = manifest();
         List<LoadedCase> cases = select(caseIds);
         assertCassetteCoverage(cases);
@@ -79,6 +80,15 @@ class CiFixtureTest extends IntegrationTestBase {
                 "metrics.json diverged from the committed baseline");
 
         assertConfusionCells(actualMetrics);
+
+        long elapsedNanos = System.nanoTime() - started;
+        long elapsedMillis = elapsedNanos / 1_000_000;
+        ((com.fasterxml.jackson.databind.node.ObjectNode) actualMetrics)
+                .putObject("fixture").put("elapsedMs", elapsedMillis);
+        JSON.writeValue(metrics.toFile(), actualMetrics);
+        System.out.println("fixture elapsed " + elapsedMillis + " ms");
+        assertTrue(elapsedNanos < 120_000_000_000L,
+                "the fixture took " + elapsedMillis + " ms, above the two-minute budget");
     }
 
     private List<String> manifest() throws IOException {
@@ -112,7 +122,7 @@ class CiFixtureTest extends IntegrationTestBase {
             String deductionId = CorpusLoader.deductionId(loaded.facts().caseId()).toString();
             assertTrue(verdicts.has(deductionId),
                     "the verdict cassette has no entry for " + loaded.facts().caseId());
-            boolean disputable = loaded.facts().expectedState() == VerdictValue.DISPUTABLE;
+            boolean disputable = loaded.expectation().expectedState() == VerdictValue.DISPUTABLE;
             if (disputable) {
                 assertTrue(drafts.has(deductionId),
                         "the drafts cassette has no entry for " + loaded.facts().caseId());

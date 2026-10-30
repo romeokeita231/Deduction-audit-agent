@@ -1,54 +1,60 @@
 {
-  "caseId" : "PROMOTION-CONFLICT_ARBITRATED-05",
-  "matrix" : {
-    "category" : "PROMOTION",
-    "situation" : "CONFLICT_ARBITRATED"
-  },
-  "seed" : 20260406,
-  "retailerId" : "NYC",
-  "reasonCode" : "PROMO",
-  "amount" : 130.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 2,
-  "deductionDaysAgo" : 18,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0096",
-  "invoiceNo" : null,
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [ ],
-  "invoiceLine" : null,
-  "agreements" : [
-    {
-      "docId" : "PA-EVAL-0096",
-      "validFromDaysAgo" : 78,
-      "validToDaysAgo" : null,
-      "clauses" : [
+  "facts" : {
+    "caseId" : "PROMOTION-CONFLICT_ARBITRATED-05",
+    "cell" : {
+      "category" : "PROMOTION",
+      "situation" : "CONFLICT_ARBITRATED"
+    },
+    "seed" : 20260406,
+    "retailerId" : "NYC",
+    "reasonCode" : "PROMO",
+    "amount" : 130.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 18,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0096",
+      "invoiceNo" : null,
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [
         {
-          "clauseNo" : "3.1",
-          "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
-          "effect" : "SUPPORTS_ACCRUAL"
-        },
-        {
-          "clauseNo" : "3.2",
-          "text" : "Retailer earns a five percent rebate; the summary in the audit system understates it.",
-          "effect" : "CONFLICTS_WITH_SUMMARY"
+          "docId" : "PA-EVAL-0096",
+          "validFromDaysAgo" : 78,
+          "validToDaysAgo" : null,
+          "clauses" : [
+            {
+              "clauseNo" : "3.1",
+              "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
+              "effect" : "SUPPORTS_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.2",
+              "text" : "Retailer earns a five percent rebate; the summary in the audit system understates it.",
+              "effect" : "CONFLICTS_WITH_SUMMARY"
+            }
+          ]
         }
-      ]
+      ],
+      "settlement" : {
+        "docId" : "PA-EVAL-0096",
+        "accruedAmount" : 500.00,
+        "settledAmount" : 500.00,
+        "settledDaysAgo" : 28
+      }
     }
-  ],
-  "settlement" : {
-    "docId" : "PA-EVAL-0096",
-    "accruedAmount" : 500.00,
-    "settledAmount" : 500.00,
-    "settledDaysAgo" : 28
   },
-  "expectedState" : "DEDUCTION_STANDS",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "SETTLE:PA-EVAL-0096"
-  ],
-  "oracleBranch" : "PROMOTION_CLAUSE_OVERRIDES_SUMMARY"
+  "expectation" : {
+    "expectedState" : "DEDUCTION_STANDS",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "SETTLE:PA-EVAL-0096"
+    ],
+    "oracleBranch" : "PROMOTION_CLAUSE_OVERRIDES_SUMMARY"
+  }
 }

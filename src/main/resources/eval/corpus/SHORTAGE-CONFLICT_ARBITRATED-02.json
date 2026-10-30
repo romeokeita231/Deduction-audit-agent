@@ -1,41 +1,47 @@
 {
-  "caseId" : "SHORTAGE-CONFLICT_ARBITRATED-02",
-  "matrix" : {
-    "category" : "SHORTAGE",
-    "situation" : "CONFLICT_ARBITRATED"
+  "facts" : {
+    "caseId" : "SHORTAGE-CONFLICT_ARBITRATED-02",
+    "cell" : {
+      "category" : "SHORTAGE",
+      "situation" : "CONFLICT_ARBITRATED"
+    },
+    "seed" : 20260333,
+    "retailerId" : "NYC",
+    "reasonCode" : "SHORT",
+    "amount" : 350.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 4,
+    "deductionDaysAgo" : 12,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : "SHP-EVAL-0023",
+      "sku" : null,
+      "invoiceNo" : null,
+      "asn" : {
+        "declaredQty" : 45,
+        "shippedDaysAgo" : 30
+      },
+      "bol" : {
+        "shippedQty" : 39,
+        "shippedDaysAgo" : 30
+      },
+      "pod" : {
+        "receivedQty" : 36,
+        "receivedDaysAgo" : 17
+      },
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
   },
-  "seed" : 20260333,
-  "retailerId" : "NYC",
-  "reasonCode" : "SHORT",
-  "amount" : 350.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 4,
-  "deductionDaysAgo" : 12,
-  "windowDays" : 30,
-  "shipmentId" : "SHP-EVAL-0023",
-  "sku" : null,
-  "invoiceNo" : null,
-  "asn" : {
-    "declaredQty" : 45,
-    "shippedDaysAgo" : 30
-  },
-  "bol" : {
-    "shippedQty" : 39,
-    "shippedDaysAgo" : 30
-  },
-  "pod" : {
-    "receivedQty" : 36,
-    "receivedDaysAgo" : 17
-  },
-  "priceIntervals" : [ ],
-  "invoiceLine" : null,
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DISPUTABLE",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "BOL:SHP-EVAL-0023",
-    "POD:SHP-EVAL-0023"
-  ],
-  "oracleBranch" : "SHORTAGE_ASN_BOL_DISAGREE_BOL_WINS"
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "BOL:SHP-EVAL-0023",
+      "POD:SHP-EVAL-0023"
+    ],
+    "oracleBranch" : "SHORTAGE_ASN_BOL_DISAGREE_BOL_WINS"
+  }
 }

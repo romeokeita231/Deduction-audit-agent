@@ -1,6 +1,6 @@
 package com.deductionaudit.replay;
 
-import com.deductionaudit.shared.PromptMarker;
+import com.deductionaudit.shared.PromptInspection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -22,14 +22,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 @Profile("replay")
 public class ReplayChatModel implements ChatModel {
 
-    private static final Pattern DEDUCTION_ID = Pattern.compile("EDI812:([0-9a-fA-F-]{36})");
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final ReplayScenario verdicts;
@@ -45,14 +42,14 @@ public class ReplayChatModel implements ChatModel {
                 "classpath:replay/scenarios.json");
         String draftLocation = environment.getProperty("app.replay.drafts-scenario",
                 "classpath:replay/scenarios.json");
-        this.verdicts = read(resourceLoader, verdictLocation);
-        this.drafts = read(resourceLoader, draftLocation);
+        this.verdicts = read(resourceLoader, verdictLocation, modelName);
+        this.drafts = read(resourceLoader, draftLocation, modelName);
     }
 
-    private static ReplayScenario read(ResourceLoader resourceLoader, String location) {
+    private static ReplayScenario read(ResourceLoader resourceLoader, String location, String modelName) {
         Resource resource = resourceLoader.getResource(location);
         if (!resource.exists()) {
-            return new ReplayScenario("replay", Map.of(), Map.of());
+            return new ReplayScenario(modelName, Map.of(), Map.of());
         }
         try (InputStream stream = resource.getInputStream()) {
             return JSON.readValue(stream, ReplayScenario.class);
@@ -68,10 +65,10 @@ public class ReplayChatModel implements ChatModel {
 
     @Override
     public ChatResponse call(Prompt prompt) {
-        if (isDraft(prompt)) {
-            return draftResponse(deductionId(prompt));
+        if (PromptInspection.isDraft(prompt)) {
+            return draftResponse(PromptInspection.deductionId(prompt));
         }
-        UUID deductionId = deductionId(prompt);
+        UUID deductionId = PromptInspection.deductionId(prompt);
         List<Message> messages = prompt.getInstructions();
         long assistantMessages = messages.stream()
                 .filter(message -> message.getMessageType() == MessageType.ASSISTANT)
@@ -120,15 +117,6 @@ public class ReplayChatModel implements ChatModel {
                 .build();
     }
 
-    private static boolean isDraft(Prompt prompt) {
-        for (Message message : prompt.getInstructions()) {
-            if (message.getText() != null && message.getText().contains(PromptMarker.DRAFT)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private ChatResponse draftResponse(UUID deductionId) {
         int index = draftCounters.computeIfAbsent(deductionId, id -> new AtomicInteger()).incrementAndGet();
         List<ReplayScenario.ReplayDraft> entries = drafts.drafts().get(deductionId.toString());
@@ -141,16 +129,6 @@ public class ReplayChatModel implements ChatModel {
                         AssistantMessage.builder().content(entries.get(index - 1).text()).build())))
                 .metadata("model", modelName)
                 .build();
-    }
-
-    private static UUID deductionId(Prompt prompt) {
-        for (Message message : prompt.getInstructions()) {
-            Matcher matcher = DEDUCTION_ID.matcher(message.getText() == null ? "" : message.getText());
-            if (matcher.find()) {
-                return UUID.fromString(matcher.group(1));
-            }
-        }
-        throw new IllegalStateException("the prompt carries no deduction id");
     }
 
     private static void sleep(long millis) {

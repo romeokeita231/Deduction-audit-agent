@@ -1,46 +1,52 @@
 {
-  "caseId" : "PRICE-CONFLICT_ARBITRATED-06",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "CONFLICT_ARBITRATED"
-  },
-  "seed" : 20260372,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 350.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 5,
-  "deductionDaysAgo" : 18,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0062",
-  "invoiceNo" : "INV-EVAL-0062",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 48,
-      "validToDaysAgo" : null,
-      "unitPrice" : 18.50
+  "facts" : {
+    "caseId" : "PRICE-CONFLICT_ARBITRATED-06",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "CONFLICT_ARBITRATED"
     },
-    {
-      "validFromDaysAgo" : 108,
-      "validToDaysAgo" : 63,
-      "unitPrice" : 19.50
+    "seed" : 20260372,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 350.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 5,
+    "deductionDaysAgo" : 18,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0062",
+      "invoiceNo" : "INV-EVAL-0062",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 48,
+          "validToDaysAgo" : null,
+          "unitPrice" : 18.50
+        },
+        {
+          "validFromDaysAgo" : 108,
+          "validToDaysAgo" : 63,
+          "unitPrice" : 19.50
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 23,
+        "unitPrice" : 18.50
+      },
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : {
-    "qty" : 23,
-    "unitPrice" : 18.50
   },
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DEDUCTION_STANDS",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "PRICE:SKU-EVAL-0062:@48",
-    "INVOICE:INV-EVAL-0062"
-  ],
-  "oracleBranch" : "PRICE_NON_COVERING_INTERVAL_IGNORED"
+  "expectation" : {
+    "expectedState" : "DEDUCTION_STANDS",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PRICE:SKU-EVAL-0062:@48",
+      "INVOICE:INV-EVAL-0062"
+    ],
+    "oracleBranch" : "PRICE_NON_COVERING_INTERVAL_IGNORED"
+  }
 }

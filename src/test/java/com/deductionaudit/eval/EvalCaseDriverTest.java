@@ -5,7 +5,8 @@ import com.deductionaudit.domain.Claim;
 import com.deductionaudit.domain.DeductionCategory;
 import com.deductionaudit.eval.corpus.CorpusLoader;
 import com.deductionaudit.eval.corpus.CorpusLoader.LoadedCase;
-import com.deductionaudit.shared.PromptMarker;
+import com.deductionaudit.eval.corpus.EvidenceToken;
+import com.deductionaudit.shared.PromptInspection;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -34,8 +35,6 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,7 +46,6 @@ class EvalCaseDriverTest extends IntegrationTestBase {
 
     private static final ObjectMapper JSON = new ObjectMapper();
     private static final Clock FIXED = Clock.fixed(FIXED_NOW, ZoneOffset.UTC);
-    private static final Pattern DEDUCTION_ID = Pattern.compile("EDI812:([0-9a-fA-F-]{36})");
     private static final List<String> CASE_IDS = List.of(
             "SHORTAGE-SUPPORTS_RETAILER-01",
             "SHORTAGE-SUPPORTS_SUPPLIER-01",
@@ -86,7 +84,7 @@ class EvalCaseDriverTest extends IntegrationTestBase {
         List<String> lines = rows.stream().map(NdjsonExporter::line).toList();
         for (String line : lines) {
             JsonNode node = JSON.readTree(line);
-            assertEquals(1, node.get("schemaVersion").asInt());
+            assertEquals(NdjsonExporter.SCHEMA_VERSION, node.get("schemaVersion").asInt());
             assertTrue(node.has("caseId") && node.has("status") && node.has("toolCalls"));
             assertTrue(node.has("contract") && node.has("expectedState"));
             assertTrue(node.get("expectedSupportingEvidence").isArray());
@@ -179,7 +177,7 @@ class EvalCaseDriverTest extends IntegrationTestBase {
             peak.accumulateAndGet(running, Math::max);
             try {
                 sleep(40);
-                if (isDraft(prompt)) {
+                if (PromptInspection.isDraft(prompt)) {
                     return draft(prompt);
                 }
                 return verdict(prompt);
@@ -189,7 +187,7 @@ class EvalCaseDriverTest extends IntegrationTestBase {
         }
 
         private ChatResponse verdict(Prompt prompt) {
-            LoadedCase loaded = cases.get(deductionId(prompt));
+            LoadedCase loaded = cases.get(PromptInspection.deductionId(prompt));
             long rounds = prompt.getInstructions().stream()
                     .filter(message -> message.getMessageType() == MessageType.ASSISTANT)
                     .count();
@@ -197,7 +195,7 @@ class EvalCaseDriverTest extends IntegrationTestBase {
         }
 
         private ChatResponse tools(LoadedCase loaded) {
-            String shipmentId = loaded.facts().shipmentId();
+            String shipmentId = loaded.facts().evidence().shipmentId();
             List<AssistantMessage.ToolCall> calls = new ArrayList<>();
             switch (loaded.deduction().category()) {
                 case SHORTAGE -> {
@@ -212,7 +210,7 @@ class EvalCaseDriverTest extends IntegrationTestBase {
                             + "\"}"));
                 }
                 case PROMOTION -> {
-                    String docId = loaded.facts().agreements().getFirst().docId();
+                    String docId = loaded.facts().evidence().agreements().getFirst().docId();
                     calls.add(call("searchPromotionAgreements", "{\"query\":\"" + docId + "\"}"));
                     calls.add(call("getPromotionSettlement", "{\"docId\":\"" + docId + "\"}"));
                 }
@@ -270,24 +268,24 @@ class EvalCaseDriverTest extends IntegrationTestBase {
 
         private static String verdictJson(LoadedCase loaded) {
             List<String> missing = new ArrayList<>();
-            if (loaded.facts().bol() == null) {
+            if (loaded.facts().evidence().bol() == null) {
                 missing.add("BOL");
             }
-            if (loaded.facts().pod() == null) {
+            if (loaded.facts().evidence().pod() == null) {
                 missing.add("POD");
             }
-            if (loaded.facts().invoiceLine() == null
+            if (loaded.facts().evidence().invoiceLine() == null
                     && loaded.deduction().category() == DeductionCategory.PRICE_VARIANCE) {
                 missing.add("INVOICE_LINE");
             }
-            if (loaded.facts().settlement() == null
+            if (loaded.facts().evidence().settlement() == null
                     && loaded.deduction().category() == DeductionCategory.PROMOTION) {
                 missing.add("PROMOTION_SETTLEMENT");
             }
-            String supporting = loaded.facts().expectedSupportingEvidence().stream()
-                    .map(token -> "\"" + CorpusLoader.resolveEvidence(token, FIXED) + "\"")
+            String supporting = loaded.expectation().expectedSupportingEvidence().stream()
+                    .map(token -> "\"" + EvidenceToken.resolve(token, FIXED) + "\"")
                     .collect(Collectors.joining(","));
-            return "{\"verdict\":\"" + loaded.facts().expectedState().name()
+            return "{\"verdict\":\"" + loaded.expectation().expectedState().name()
                     + "\",\"missingEvidence\":[" + missing.stream().map(value -> "\"" + value + "\"")
                     .collect(Collectors.joining(",")) + "]"
                     + ",\"references\":[\"EDI812:" + loaded.deduction().id() + "\"]"
@@ -301,25 +299,6 @@ class EvalCaseDriverTest extends IntegrationTestBase {
                             AssistantMessage.builder().content(content).build())))
                     .metadata("model", "stub")
                     .build();
-        }
-
-        private static boolean isDraft(Prompt prompt) {
-            for (Message message : prompt.getInstructions()) {
-                if (message.getText() != null && message.getText().contains(PromptMarker.DRAFT)) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        private static UUID deductionId(Prompt prompt) {
-            for (Message message : prompt.getInstructions()) {
-                Matcher matcher = DEDUCTION_ID.matcher(message.getText() == null ? "" : message.getText());
-                if (matcher.find()) {
-                    return UUID.fromString(matcher.group(1));
-                }
-            }
-            throw new IllegalStateException("the prompt carries no deduction id");
         }
 
         private static void sleep(long millis) {

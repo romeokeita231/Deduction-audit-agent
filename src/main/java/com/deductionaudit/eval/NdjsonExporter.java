@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 public final class NdjsonExporter {
 
-    public static final int SCHEMA_VERSION = 1;
+    public static final int SCHEMA_VERSION = 2;
 
     static final int SUMMARY_WORDS_MIN = 120;
     static final int SUMMARY_WORDS_MAX = 250;
@@ -36,8 +36,8 @@ public final class NdjsonExporter {
     }
 
     public record EvalRow(int schemaVersion, String caseId, int attemptNo, String status, String parkedReason,
-                          String verdict, JsonNode claim, String narrative, JsonNode digest, long latencyMs,
-                          List<ToolCall> toolCalls, Contract contract, String oracleBranch,
+                          String verdict, JsonNode claim, String narrative, String error, JsonNode digest,
+                          long latencyMs, List<ToolCall> toolCalls, Contract contract, String oracleBranch,
                           String expectedState, String expectedParkedReason,
                           List<String> expectedSupportingEvidence) {
     }
@@ -79,6 +79,7 @@ public final class NdjsonExporter {
         putNullable(node, "verdict", row.verdict());
         node.set("claim", row.claim());
         putNullable(node, "narrative", row.narrative());
+        putNullable(node, "error", row.error());
         node.set("digest", row.digest());
         if (!baseline) {
             node.put("latency", row.latencyMs());

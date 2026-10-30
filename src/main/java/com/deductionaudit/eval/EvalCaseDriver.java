@@ -6,7 +6,7 @@ import com.deductionaudit.app.EvaluationService;
 import com.deductionaudit.domain.Deduction;
 import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.eval.corpus.CorpusCase;
-import com.deductionaudit.eval.corpus.CorpusLoader;
+import com.deductionaudit.eval.corpus.EvidenceToken;
 import com.deductionaudit.eval.corpus.CorpusLoader.LoadedCase;
 import com.deductionaudit.persistence.DeductionStore;
 import com.deductionaudit.shared.ApiException;
@@ -62,6 +62,7 @@ public class EvalCaseDriver {
         String narrative = null;
         JsonNode claim = null;
         JsonNode digest = null;
+        String error = null;
         if (result.verdict() != null && result.verdict().verdict() == VerdictValue.DISPUTABLE) {
             try {
                 DisputeService.Disputed disputed = disputes.dispute(id, "eval", "eval:live");
@@ -72,6 +73,7 @@ public class EvalCaseDriver {
                 if (e.status() != 503) {
                     throw e;
                 }
+                error = e.code() + ": " + e.getMessage();
             }
         }
 
@@ -82,8 +84,8 @@ public class EvalCaseDriver {
         String amount = claim == null ? after.amount().setScale(2).toPlainString()
                 : claim.get("amount").asText();
         List<String> expected = new ArrayList<>();
-        for (String token : facts.expectedSupportingEvidence()) {
-            expected.add(CorpusLoader.resolveEvidence(token, clock));
+        for (String token : loaded.expectation().expectedSupportingEvidence()) {
+            expected.add(EvidenceToken.resolve(token, clock));
         }
         return new NdjsonExporter.EvalRow(
                 NdjsonExporter.SCHEMA_VERSION,
@@ -94,13 +96,15 @@ public class EvalCaseDriver {
                 result.verdict() == null ? null : result.verdict().verdict().name(),
                 claim,
                 narrative,
+                error,
                 digest,
                 latency,
                 toolCalls(id, attemptNo),
                 NdjsonExporter.contract(amount),
-                facts.oracleBranch(),
-                facts.expectedState().name(),
-                facts.expectedParkedReason() == null ? null : facts.expectedParkedReason().name(),
+                loaded.expectation().oracleBranch(),
+                loaded.expectation().expectedState().name(),
+                loaded.expectation().expectedParkedReason() == null ? null
+                        : loaded.expectation().expectedParkedReason().name(),
                 List.copyOf(expected));
     }
 
@@ -138,21 +142,26 @@ public class EvalCaseDriver {
     }
 
     private List<NdjsonExporter.ToolCall> toolCalls(UUID id, int attemptNo) {
-        Map<String, long[]> aggregate = new TreeMap<>();
+        Map<String, CallAggregate> aggregate = new TreeMap<>();
         for (TraceEntry entry : trace.read(id, attemptNo)) {
             if (!"tool".equals(entry.type())) {
                 continue;
             }
             String name = entry.name() == null ? "unknown" : entry.name();
-            long[] values = aggregate.computeIfAbsent(name, key -> new long[2]);
-            values[0]++;
-            values[1] += entry.durationMs();
+            aggregate.merge(name, new CallAggregate(1, entry.durationMs()), CallAggregate::plus);
         }
         List<NdjsonExporter.ToolCall> calls = new ArrayList<>();
-        for (Map.Entry<String, long[]> entry : aggregate.entrySet()) {
-            calls.add(new NdjsonExporter.ToolCall(entry.getKey(), (int) entry.getValue()[0],
-                    entry.getValue()[1]));
+        for (Map.Entry<String, CallAggregate> entry : aggregate.entrySet()) {
+            calls.add(new NdjsonExporter.ToolCall(entry.getKey(), entry.getValue().count(),
+                    entry.getValue().durationMs()));
         }
         return List.copyOf(calls);
+    }
+
+    private record CallAggregate(int count, long durationMs) {
+
+        private CallAggregate plus(CallAggregate other) {
+            return new CallAggregate(count + other.count, durationMs + other.durationMs);
+        }
     }
 }

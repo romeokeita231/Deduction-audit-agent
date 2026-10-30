@@ -1,13 +1,13 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "corpus": {
-    "sha256": "8f38a3c458e0faca46de15310b2f9340b094701250b272a60a7ef7a0eba17ef7",
+    "sha256": "891be561cf8cfaeae5368c6ca5d62916361e0a689659b7f3ad5db67b765906a3",
     "cases": 15
   },
   "policy": {
     "sha256": "3dde491d3d993fb2dbaa3a9d727e03864285fc8e223a25179ed614a5d89fc2d8"
   },
-  "commit": "d705c21fa532537767643acd1e35e26155a04fd1",
+  "commit": "aa5bff879153a7a4e9d4a9efa58e2fd26566302a",
   "metric1": {
     "microExactMatch": {
       "k": 15,

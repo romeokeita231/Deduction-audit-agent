@@ -7,10 +7,12 @@ import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.eval.corpus.CorpusCase;
 import com.deductionaudit.eval.corpus.CorpusCase.ClauseEffect;
 import com.deductionaudit.eval.corpus.CorpusCase.PriceInterval;
+import com.deductionaudit.eval.corpus.EvidenceToken;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public final class Oracle {
 
@@ -40,6 +42,18 @@ public final class Oracle {
             "PROMOTION_SAME_LEVEL_CLAUSES_DISAGREE";
     public static final String PROMOTION_NO_AGREEMENT = "PROMOTION_NO_AGREEMENT";
 
+    public enum PolicyGapCause {
+        SAME_LEVEL_CONFLICT,
+        NO_RULE_COVERS_THE_FACTS
+    }
+
+    private static final Map<String, PolicyGapCause> POLICY_GAP_BRANCHES = Map.of(
+            SHORTAGE_POD_ABOVE_BOL, PolicyGapCause.NO_RULE_COVERS_THE_FACTS,
+            PRICE_NO_COVERING_INTERVAL, PolicyGapCause.NO_RULE_COVERS_THE_FACTS,
+            PRICE_OVERLAPPING_INTERVALS_CONFLICT, PolicyGapCause.SAME_LEVEL_CONFLICT,
+            PROMOTION_SAME_LEVEL_CLAUSES_DISAGREE, PolicyGapCause.SAME_LEVEL_CONFLICT,
+            PROMOTION_NO_AGREEMENT, PolicyGapCause.NO_RULE_COVERS_THE_FACTS);
+
     public Oracle() {
         PolicyProvider provider = new PolicyProvider();
         frozen(provider.text(), provider.version());
@@ -54,8 +68,20 @@ public final class Oracle {
         }
     }
 
+    public static boolean isPolicyGapBranch(String branch) {
+        return POLICY_GAP_BRANCHES.containsKey(branch);
+    }
+
+    public static PolicyGapCause policyGapCause(String branch) {
+        PolicyGapCause cause = POLICY_GAP_BRANCHES.get(branch);
+        if (cause == null) {
+            throw new IllegalStateException("the policy gap branch " + branch + " is not enumerated");
+        }
+        return cause;
+    }
+
     public OracleExpectation expectation(CorpusCase facts) {
-        return switch (facts.matrix().category()) {
+        return switch (facts.cell().category()) {
             case SHORTAGE -> shortage(facts);
             case PRICE_VARIANCE -> price(facts);
             case PROMOTION -> promotion(facts);
@@ -63,30 +89,32 @@ public final class Oracle {
     }
 
     private OracleExpectation shortage(CorpusCase facts) {
-        if (facts.bol() == null) {
+        CorpusCase.Evidence evidence = facts.evidence();
+        if (evidence.bol() == null) {
             return inconclusive(ParkedReason.EVIDENCE_GAP, SHORTAGE_MISSING_BOL);
         }
-        if (facts.pod() == null) {
+        if (evidence.pod() == null) {
             return inconclusive(ParkedReason.EVIDENCE_GAP, SHORTAGE_MISSING_POD);
         }
-        int shipped = facts.bol().shippedQty();
-        int received = facts.pod().receivedQty();
+        int shipped = evidence.bol().shippedQty();
+        int received = evidence.pod().receivedQty();
         if (received > shipped) {
             return inconclusive(ParkedReason.POLICY_GAP, SHORTAGE_POD_ABOVE_BOL);
         }
-        boolean asnDisagrees = facts.asn() != null && facts.asn().declaredQty() != shipped;
+        boolean asnDisagrees = evidence.asn() != null && evidence.asn().declaredQty() != shipped;
         String branch = asnDisagrees ? SHORTAGE_ASN_BOL_DISAGREE_BOL_WINS
                 : received == shipped ? SHORTAGE_POD_EQUALS_BOL : SHORTAGE_POD_BELOW_BOL;
         return new OracleExpectation(received == shipped ? VerdictValue.DEDUCTION_STANDS
                 : VerdictValue.DISPUTABLE, null,
-                List.of(EvidenceIds.bol(facts.shipmentId()), EvidenceIds.pod(facts.shipmentId())), branch);
+                List.of(EvidenceIds.bol(evidence.shipmentId()), EvidenceIds.pod(evidence.shipmentId())), branch);
     }
 
     private OracleExpectation price(CorpusCase facts) {
-        if (facts.invoiceLine() == null) {
+        CorpusCase.Evidence evidence = facts.evidence();
+        if (evidence.invoiceLine() == null) {
             return inconclusive(ParkedReason.EVIDENCE_GAP, PRICE_MISSING_INVOICE);
         }
-        List<PriceInterval> covering = covering(facts);
+        List<PriceInterval> covering = covering(evidence, facts.deductionDaysAgo());
         if (covering.isEmpty()) {
             return inconclusive(ParkedReason.POLICY_GAP, PRICE_NO_COVERING_INTERVAL);
         }
@@ -100,37 +128,37 @@ public final class Oracle {
             return inconclusive(ParkedReason.POLICY_GAP, PRICE_OVERLAPPING_INTERVALS_CONFLICT);
         }
         PriceInterval effective = covering.getFirst();
-        boolean below = facts.invoiceLine().unitPrice().compareTo(effective.unitPrice()) < 0;
+        boolean below = evidence.invoiceLine().unitPrice().compareTo(effective.unitPrice()) < 0;
         String branch;
-        if (facts.priceIntervals().size() > covering.size()) {
+        if (evidence.priceIntervals().size() > covering.size()) {
             branch = PRICE_NON_COVERING_INTERVAL_IGNORED;
         } else {
             branch = below ? PRICE_INVOICE_BELOW_MASTER : PRICE_INVOICE_AT_OR_ABOVE_MASTER;
         }
         return new OracleExpectation(below ? VerdictValue.DISPUTABLE : VerdictValue.DEDUCTION_STANDS,
-                null, List.of("PRICE:" + facts.sku() + ":@" + effective.validFromDaysAgo(),
-                EvidenceIds.invoice(facts.invoiceNo())), branch);
+                null, List.of(EvidenceToken.price(evidence.sku(), effective.validFromDaysAgo()),
+                EvidenceIds.invoice(evidence.invoiceNo())), branch);
     }
 
-    private static List<PriceInterval> covering(CorpusCase facts) {
-        int date = facts.deductionDaysAgo();
-        return facts.priceIntervals().stream()
+    private static List<PriceInterval> covering(CorpusCase.Evidence evidence, int date) {
+        return evidence.priceIntervals().stream()
                 .filter(interval -> interval.validFromDaysAgo() >= date)
                 .filter(interval -> interval.validToDaysAgo() == null || date >= interval.validToDaysAgo())
                 .toList();
     }
 
     private OracleExpectation promotion(CorpusCase facts) {
-        if (facts.settlement() == null) {
+        CorpusCase.Evidence evidence = facts.evidence();
+        if (evidence.settlement() == null) {
             return inconclusive(ParkedReason.EVIDENCE_GAP, PROMOTION_MISSING_SETTLEMENT);
         }
-        if (facts.agreements().isEmpty()) {
+        if (evidence.agreements().isEmpty()) {
             return inconclusive(ParkedReason.POLICY_GAP, PROMOTION_NO_AGREEMENT);
         }
         boolean overrides = false;
         boolean supports = false;
         boolean denies = false;
-        for (CorpusCase.Agreement agreement : facts.agreements()) {
+        for (CorpusCase.Agreement agreement : evidence.agreements()) {
             for (CorpusCase.Clause clause : agreement.clauses()) {
                 ClauseEffect effect = clause.effect();
                 overrides = overrides || effect == ClauseEffect.CONFLICTS_WITH_SUMMARY;
@@ -141,30 +169,33 @@ public final class Oracle {
         if (!overrides && supports && denies) {
             return inconclusive(ParkedReason.POLICY_GAP, PROMOTION_SAME_LEVEL_CLAUSES_DISAGREE);
         }
-        BigDecimal accrued = facts.settlement().accruedAmount();
-        BigDecimal settled = facts.settlement().settledAmount();
+        BigDecimal accrued = evidence.settlement().accruedAmount();
+        BigDecimal settled = evidence.settlement().settledAmount();
         if (supports && accrued.compareTo(settled) > 0) {
             return new OracleExpectation(VerdictValue.DISPUTABLE, null,
-                    List.of(accrualClause(facts), EvidenceIds.settlement(facts.settlement().docId())),
+                    List.of(accrualClause(evidence), EvidenceIds.settlement(evidence.settlement().docId())),
                     overrides ? PROMOTION_CLAUSE_OVERRIDES_SUMMARY : PROMOTION_ACCRUAL_EXCEEDS_SETTLEMENT);
         }
         return new OracleExpectation(VerdictValue.DEDUCTION_STANDS, null,
-                List.of(EvidenceIds.settlement(facts.settlement().docId())),
+                List.of(EvidenceIds.settlement(evidence.settlement().docId())),
                 overrides ? PROMOTION_CLAUSE_OVERRIDES_SUMMARY : PROMOTION_SETTLEMENT_MATCHES);
     }
 
-    private static String accrualClause(CorpusCase facts) {
-        for (CorpusCase.Agreement agreement : facts.agreements()) {
+    private static String accrualClause(CorpusCase.Evidence evidence) {
+        for (CorpusCase.Agreement agreement : evidence.agreements()) {
             for (CorpusCase.Clause clause : agreement.clauses()) {
                 if (clause.effect() == ClauseEffect.SUPPORTS_ACCRUAL) {
                     return EvidenceIds.promotion(agreement.docId(), clause.clauseNo());
                 }
             }
         }
-        throw new IllegalStateException("no accrual clause exists for " + facts.caseId());
+        throw new IllegalStateException("no accrual clause exists for the case");
     }
 
     private static OracleExpectation inconclusive(ParkedReason reason, String branch) {
+        if (reason == ParkedReason.POLICY_GAP) {
+            policyGapCause(branch);
+        }
         return new OracleExpectation(VerdictValue.INCONCLUSIVE, reason, List.of(), branch);
     }
 }

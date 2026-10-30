@@ -1,35 +1,41 @@
 {
-  "caseId" : "PRICE-EVIDENCE_MISSING-02",
-  "matrix" : {
-    "category" : "PRICE_VARIANCE",
-    "situation" : "EVIDENCE_MISSING"
-  },
-  "seed" : 20260361,
-  "retailerId" : "NYC",
-  "reasonCode" : "PRICE",
-  "amount" : 330.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 2,
-  "deductionDaysAgo" : 12,
-  "windowDays" : 30,
-  "shipmentId" : null,
-  "sku" : "SKU-EVAL-0051",
-  "invoiceNo" : "INV-EVAL-0051",
-  "asn" : null,
-  "bol" : null,
-  "pod" : null,
-  "priceIntervals" : [
-    {
-      "validFromDaysAgo" : 42,
-      "validToDaysAgo" : null,
-      "unitPrice" : 15.50
+  "facts" : {
+    "caseId" : "PRICE-EVIDENCE_MISSING-02",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "EVIDENCE_MISSING"
+    },
+    "seed" : 20260361,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 330.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 12,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0051",
+      "invoiceNo" : "INV-EVAL-0051",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 42,
+          "validToDaysAgo" : null,
+          "unitPrice" : 15.50
+        }
+      ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
     }
-  ],
-  "invoiceLine" : null,
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "INCONCLUSIVE",
-  "expectedParkedReason" : "EVIDENCE_GAP",
-  "expectedSupportingEvidence" : [ ],
-  "oracleBranch" : "PRICE_MISSING_INVOICE"
+  },
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "EVIDENCE_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PRICE_MISSING_INVOICE"
+  }
 }

@@ -1,41 +1,47 @@
 {
-  "caseId" : "SHORTAGE-SUPPORTS_RETAILER-04",
-  "matrix" : {
-    "category" : "SHORTAGE",
-    "situation" : "SUPPORTS_RETAILER"
+  "facts" : {
+    "caseId" : "SHORTAGE-SUPPORTS_RETAILER-04",
+    "cell" : {
+      "category" : "SHORTAGE",
+      "situation" : "SUPPORTS_RETAILER"
+    },
+    "seed" : 20260321,
+    "retailerId" : "NYC",
+    "reasonCode" : "SHORT",
+    "amount" : 380.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 3,
+    "deductionDaysAgo" : 12,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : "SHP-EVAL-0011",
+      "sku" : null,
+      "invoiceNo" : null,
+      "asn" : {
+        "declaredQty" : 33,
+        "shippedDaysAgo" : 22
+      },
+      "bol" : {
+        "shippedQty" : 33,
+        "shippedDaysAgo" : 22
+      },
+      "pod" : {
+        "receivedQty" : 31,
+        "receivedDaysAgo" : 17
+      },
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
   },
-  "seed" : 20260321,
-  "retailerId" : "NYC",
-  "reasonCode" : "SHORT",
-  "amount" : 380.00,
-  "currency" : "USD",
-  "receivedDaysAgo" : 3,
-  "deductionDaysAgo" : 12,
-  "windowDays" : 30,
-  "shipmentId" : "SHP-EVAL-0011",
-  "sku" : null,
-  "invoiceNo" : null,
-  "asn" : {
-    "declaredQty" : 33,
-    "shippedDaysAgo" : 22
-  },
-  "bol" : {
-    "shippedQty" : 33,
-    "shippedDaysAgo" : 22
-  },
-  "pod" : {
-    "receivedQty" : 31,
-    "receivedDaysAgo" : 17
-  },
-  "priceIntervals" : [ ],
-  "invoiceLine" : null,
-  "agreements" : [ ],
-  "settlement" : null,
-  "expectedState" : "DISPUTABLE",
-  "expectedParkedReason" : null,
-  "expectedSupportingEvidence" : [
-    "BOL:SHP-EVAL-0011",
-    "POD:SHP-EVAL-0011"
-  ],
-  "oracleBranch" : "SHORTAGE_POD_BELOW_BOL"
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "BOL:SHP-EVAL-0011",
+      "POD:SHP-EVAL-0011"
+    ],
+    "oracleBranch" : "SHORTAGE_POD_BELOW_BOL"
+  }
 }
