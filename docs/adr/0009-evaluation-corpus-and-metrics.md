@@ -49,7 +49,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 
 ## NDJSON 契约与归一化
 
-`eval:live` 与 CI 的 fixture 路径**只差 profile**（live 与 replay），导出器是同一个类，NDJSON 只有一份格式。全量行一行一 case，字段：`schemaVersion` / `caseId` / `attemptNo` / `status` / `parkedReason` / `verdict` / `claim` / `narrative` / `digest` / `latency` / `toolCalls` / `contract` / `oracleBranch`。
+`eval:live` 与 CI 的 fixture 路径**只差 profile**（live 与 replay），导出器是同一个类，NDJSON 只有一份格式。全量行一行一 case，字段：`schemaVersion` / `caseId` / `attemptNo` / `status` / `parkedReason` / `verdict` / `claim` / `narrative` / `digest` / `latency` / `toolCalls` / `contract` / `oracleBranch` / `expectedState` / `expectedParkedReason` / `expectedSupportingEvidence`。三个 `expected*` 字段让每行自包含——第三方脚本只吃 `results.ndjson` 就能复算指标 1 与指标 2；**基线行也保留它们**，静态标签不影响确定性，反而让基线 diff 顺带盯住标注漂移。
 
 - **全量行与基线行是同一套导出器的两种输出模式，不是两套格式。** 导出器只产全量行；**写基线文件时**套用白名单：去 `latency`、去每个 toolCall 的 `duration`（只留 `name` 与 `count`）、去 timestamp、trace id、运行时生成的 verdict/attempt UUID。`docs/eval/reports/*/results.ndjson` 保留 `latency`，供人读。
 - 不这么写清，第一次 CI 必红在 `latency` 上，然后有人把检查删了——正是本 ADR 反复警告的那个失败模式。白名单属于导出器，不属于 diff 脚本。
