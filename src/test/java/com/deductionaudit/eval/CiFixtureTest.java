@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestPropertySource(properties = {
@@ -45,14 +46,14 @@ class CiFixtureTest extends IntegrationTestBase {
     void theManifestRunsThroughReplayAndMatchesTheCommittedBaseline(@TempDir Path work)
             throws IOException, InterruptedException {
         long started = System.nanoTime();
-        List<String> caseIds = manifest();
-        List<LoadedCase> cases = select(caseIds);
-        assertCassetteCoverage(cases);
+        List<ManifestEntry> entries = manifest();
+        List<LoadedCase> cases = select(entries);
+        assertCassetteCoverage(cases, entries);
 
         List<NdjsonExporter.EvalRow> rows = driver.runAll(cases, EvalCaseDriver.MAX_CONCURRENCY);
-        assertEquals(caseIds.size(), rows.size());
-        for (int index = 0; index < caseIds.size(); index++) {
-            assertEquals(caseIds.get(index), rows.get(index).caseId());
+        assertEquals(entries.size(), rows.size());
+        for (int index = 0; index < entries.size(); index++) {
+            assertEquals(entries.get(index).caseId(), rows.get(index).caseId());
         }
 
         Path results = work.resolve("results.ndjson");
@@ -91,41 +92,52 @@ class CiFixtureTest extends IntegrationTestBase {
                 "the fixture took " + elapsedMillis + " ms, above the two-minute budget");
     }
 
-    private List<String> manifest() throws IOException {
+    private record ManifestEntry(String caseId, String why) {
+    }
+
+    private List<ManifestEntry> manifest() throws IOException {
         try (InputStream stream = getClass().getResourceAsStream("/eval/ci-manifest.json")) {
             JsonNode root = JSON.readTree(stream);
-            List<String> caseIds = new ArrayList<>();
-            root.get("caseIds").forEach(node -> caseIds.add(node.asText()));
-            assertEquals(15, caseIds.size(), "the manifest must cover three categories and five situations");
-            return caseIds;
+            List<ManifestEntry> entries = new ArrayList<>();
+            for (JsonNode node : root.get("cases")) {
+                JsonNode why = node.get("why");
+                entries.add(new ManifestEntry(node.get("caseId").asText(),
+                        why == null || why.isNull() ? null : why.asText()));
+            }
+            assertEquals(15, entries.size(), "the manifest must cover three categories and five situations");
+            return entries;
         }
     }
 
-    private List<LoadedCase> select(List<String> caseIds) {
+    private List<LoadedCase> select(List<ManifestEntry> entries) {
         Map<String, LoadedCase> available = new TreeMap<>();
         for (LoadedCase loaded : corpus.load(java.time.Clock.fixed(FIXED_NOW, java.time.ZoneOffset.UTC))) {
             available.put(loaded.facts().caseId(), loaded);
         }
         List<LoadedCase> selected = new ArrayList<>();
-        for (String caseId : caseIds) {
-            LoadedCase loaded = available.get(caseId);
-            assertNotNull(loaded, "the manifest names a case the corpus does not hold: " + caseId);
+        for (ManifestEntry entry : entries) {
+            LoadedCase loaded = available.get(entry.caseId());
+            assertNotNull(loaded, "the manifest names a case the corpus does not hold: " + entry.caseId());
             selected.add(loaded);
         }
         return selected;
     }
 
-    private void assertCassetteCoverage(List<LoadedCase> cases) throws IOException {
+    private void assertCassetteCoverage(List<LoadedCase> cases, List<ManifestEntry> entries)
+            throws IOException {
         JsonNode verdicts = cassette("verdict").get("deductions");
         JsonNode drafts = cassette("drafts").get("drafts");
-        for (LoadedCase loaded : cases) {
-            String deductionId = CorpusLoader.deductionId(loaded.facts().caseId()).toString();
-            assertTrue(verdicts.has(deductionId),
-                    "the verdict cassette has no entry for " + loaded.facts().caseId());
-            boolean disputable = loaded.expectation().expectedState() == VerdictValue.DISPUTABLE;
-            if (disputable) {
-                assertTrue(drafts.has(deductionId),
-                        "the drafts cassette has no entry for " + loaded.facts().caseId());
+        for (int index = 0; index < cases.size(); index++) {
+            LoadedCase loaded = cases.get(index);
+            ManifestEntry entry = entries.get(index);
+            String caseId = loaded.facts().caseId();
+            String deductionId = CorpusLoader.deductionId(caseId).toString();
+            assertTrue(verdicts.has(deductionId), "the verdict cassette has no entry for " + caseId);
+            boolean expectsDraft = loaded.expectation().expectedState() == VerdictValue.DISPUTABLE;
+            if (expectsDraft && !drafts.has(deductionId)) {
+                assertNotNull(entry.why(), "the negative control " + caseId + " must say why");
+            } else {
+                assertNull(entry.why(), caseId + " is a positive control and must leave why empty");
             }
         }
     }

@@ -7,7 +7,7 @@
   "policy": {
     "sha256": "3dde491d3d993fb2dbaa3a9d727e03864285fc8e223a25179ed614a5d89fc2d8"
   },
-  "commit": "44d5fb93be70441a32d346ca7d4c36344d2d4eaf",
+  "commit": "e1faed744fa5af2b347ca6bfd3028ae1677de582",
   "metric1": {
     "microExactMatch": {
       "k": 15,
@@ -417,24 +417,24 @@
       "wrongField": 3,
       "unarbitrated": 3
     },
-    "claimed": 6,
+    "claimed": 5,
     "zeroReferenceCases": 0,
     "recall": {
-      "k": 12,
-      "n": 12
+      "k": 10,
+      "n": 10
     },
     "precision": {
-      "k": 12,
-      "n": 12
+      "k": 10,
+      "n": 10
     }
   },
   "metric3": {
     "structuralPass": {
-      "k": 6,
-      "n": 6
+      "k": 5,
+      "n": 5
     },
     "productionRate": {
-      "k": 6,
+      "k": 5,
       "n": 6
     }
   }

@@ -1,19 +1,50 @@
 {
-  "caseIds": [
-    "SHORTAGE-SUPPORTS_SUPPLIER-01",
-    "SHORTAGE-SUPPORTS_RETAILER-01",
-    "SHORTAGE-EVIDENCE_MISSING-01",
-    "SHORTAGE-CONFLICT_ARBITRATED-01",
-    "SHORTAGE-CONFLICT_UNARBITRATED-01",
-    "PRICE-SUPPORTS_SUPPLIER-01",
-    "PRICE-SUPPORTS_RETAILER-01",
-    "PRICE-EVIDENCE_MISSING-01",
-    "PRICE-CONFLICT_ARBITRATED-01",
-    "PRICE-CONFLICT_UNARBITRATED-01",
-    "PROMOTION-SUPPORTS_SUPPLIER-01",
-    "PROMOTION-SUPPORTS_RETAILER-01",
-    "PROMOTION-EVIDENCE_MISSING-01",
-    "PROMOTION-CONFLICT_ARBITRATED-01",
-    "PROMOTION-CONFLICT_UNARBITRATED-01"
+  "cases": [
+    {
+      "caseId": "SHORTAGE-SUPPORTS_SUPPLIER-01"
+    },
+    {
+      "caseId": "SHORTAGE-SUPPORTS_RETAILER-01"
+    },
+    {
+      "caseId": "SHORTAGE-EVIDENCE_MISSING-01"
+    },
+    {
+      "caseId": "SHORTAGE-CONFLICT_ARBITRATED-01"
+    },
+    {
+      "caseId": "SHORTAGE-CONFLICT_UNARBITRATED-01"
+    },
+    {
+      "caseId": "PRICE-SUPPORTS_SUPPLIER-01"
+    },
+    {
+      "caseId": "PRICE-SUPPORTS_RETAILER-01",
+      "why": "draft unavailable must surface as DRAFT_UNAVAILABLE and lower the yield"
+    },
+    {
+      "caseId": "PRICE-EVIDENCE_MISSING-01"
+    },
+    {
+      "caseId": "PRICE-CONFLICT_ARBITRATED-01"
+    },
+    {
+      "caseId": "PRICE-CONFLICT_UNARBITRATED-01"
+    },
+    {
+      "caseId": "PROMOTION-SUPPORTS_SUPPLIER-01"
+    },
+    {
+      "caseId": "PROMOTION-SUPPORTS_RETAILER-01"
+    },
+    {
+      "caseId": "PROMOTION-EVIDENCE_MISSING-01"
+    },
+    {
+      "caseId": "PROMOTION-CONFLICT_ARBITRATED-01"
+    },
+    {
+      "caseId": "PROMOTION-CONFLICT_UNARBITRATED-01"
+    }
   ]
 }
