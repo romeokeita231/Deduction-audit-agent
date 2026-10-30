@@ -6,7 +6,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 
 ## 语料与 oracle
 
-- **语料在 `src/main/resources/eval/corpus/`，一条一个 JSON 文件，文件名排序即固定顺序。** 放在 `test` 下，`eval:live` 在 main 作用域跑就读不到。loader 也只有一份，放 `src/main/java`，JUnit 与 `eval:live` 都调它。
+- **语料在 `src/main/resources/eval/corpus/`，一条一个 JSON 文件，文件名排序即固定顺序。** 放在 `test` 下，`eval:live` 在 main 作用域跑就读不到。loader 也只有一份，放 `src/main/java`，JUnit 与 `eval:live` 都调它。它与 `src/test/resources/eval/baseline/` 是入库的冻结 fixture，这与 `AGENTS.md` 里"禁止提交生成数据"的例外一致。
 - **时间是相对偏移，不是绝对时间戳。** JSON 存 `receivedDaysAgo` 这类偏移，loader 用注入的 `Clock` 解成 `Instant`。`eval:live` 用真时钟，CI 用固定的 `2026-03-10T06:59:00Z`。写死绝对时间必然一边废掉：要么 live 里全部过期，要么 CI 结果依赖墙钟。
 - **`caseId` 固定，扣款主键由 `UUID.nameUUIDFromBytes(caseId)` 确定性派生。** 用 JDK 自带的 v3，不手写 v5 的 SHA-1 加版本位手术；配一条 golden UUID 断言防命名空间漂移，命名空间常量固定在 loader 里。
 - **oracle 在 `src/main/java/com/deductionaudit/eval/oracle`**，只 import `domain` 的枚举，**禁止 import `agent/validators`**——那会变成用同一份实现测自己。它读的是与 prompt 同一个 `classpath:policy/audit-policy.md`，同源不需要额外机制。
@@ -22,7 +22,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 
 成因不需要新的判定逻辑：`ParkedReason.forInconclusive` 已经分开——`missingEvidence` 非空 → `EVIDENCE_GAP`，为空 → `POLICY_GAP`。指标 1 比对 `(verdict, parkedReason)`，所以对无规则 case 的断言就是免费的：`parkedReason == POLICY_GAP`。
 
-防兜底另加一条：oracle 里 `INCONCLUSIVE` + 空 `missingEvidence` 只能由"同级规则对同一事实给出相反结论"这一个分支产生，禁止兜底分支；每条 case 把命中的分支名写进 NDJSON，CI 断言无规则格的每一条都命中它。再抽 3 条做盲判复核。
+防兜底另加一条：oracle 里 `INCONCLUSIVE` + 空 `missingEvidence` 即"无规则可裁"（`POLICY_GAP`），它的成因有两种——**同级规则对同一事实给出相反结论**，以及**该事实没有任何规则覆盖**。两种成因在 oracle 里各对应一个闭合枚举值（`SAME_LEVEL_CONFLICT` / `NO_RULE_COVERS_THE_FACTS`），分支名与成因一一登记在同一个常量表里；任何未登记的分支直接在运行时抛异常，**禁止匿名或兜底分支**。每条 case 把命中的分支名写进 NDJSON，CI 断言无规则格的每一条都命中这张表里的某个分支。再抽 3 条做盲判复核。
 
 ## 指标 1：四态比对
 
