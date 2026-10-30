@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 
 from .metrics import (MetricsError, actual_state, compute, expected_state, load_rows,
-                      metric1, metric2, metric3, skeleton_passes)
+                      metric1, metric2, metric3, policy_sha256, skeleton_passes)
 
 CONTRACT = {
     "summaryWords": {"min": 120, "max": 250},
@@ -164,6 +164,13 @@ class Metric3Test(unittest.TestCase):
 
 
 class ComputeAndLoadTest(unittest.TestCase):
+
+    def test_policy_hash_matches_the_value_java_wrote_into_the_baseline(self):
+        root = Path(__file__).resolve().parents[2]
+        baseline = json.loads((root / "src/test/resources/eval/baseline/metrics.json")
+                              .read_text(encoding="utf-8"))
+        self.assertEqual(baseline["policy"]["sha256"],
+                         policy_sha256(root / "src/main/resources/policy/audit-policy.md"))
 
     def test_compute_carries_provenance_and_schema_version(self):
         report = compute(fixture(), "c", "p", "sha")

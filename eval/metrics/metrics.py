@@ -6,7 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 STATES = ("DEDUCTION_STANDS", "DISPUTABLE", "EVIDENCE_GAP", "POLICY_GAP")
 CATEGORY_PREFIX = {
     "SHORTAGE": "SHORTAGE",
@@ -75,7 +75,8 @@ def corpus_sha256(directory):
 
 
 def policy_sha256(path):
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    text = Path(path).read_text(encoding="utf-8")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def commit_sha(root):
