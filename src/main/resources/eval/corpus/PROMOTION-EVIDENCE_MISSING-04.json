@@ -1,0 +1,53 @@
+{
+  "facts" : {
+    "caseId" : "PROMOTION-EVIDENCE_MISSING-04",
+    "cell" : {
+      "category" : "PROMOTION",
+      "situation" : "EVIDENCE_MISSING"
+    },
+    "seed" : 20260398,
+    "retailerId" : "NYC",
+    "reasonCode" : "PROMO",
+    "amount" : 380.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 5,
+    "deductionDaysAgo" : 7,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0088",
+      "invoiceNo" : null,
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [
+        {
+          "docId" : "PA-EVAL-0088",
+          "validFromDaysAgo" : 67,
+          "validToDaysAgo" : null,
+          "clauses" : [
+            {
+              "clauseNo" : "3.1",
+              "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
+              "effect" : "SUPPORTS_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.2",
+              "text" : "The rebate is settled within thirty days after the rebate window closes.",
+              "effect" : "NEUTRAL"
+            }
+          ]
+        }
+      ],
+      "settlement" : null
+    }
+  },
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "EVIDENCE_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PROMOTION_MISSING_SETTLEMENT"
+  }
+}

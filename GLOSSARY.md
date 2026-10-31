@@ -108,6 +108,10 @@ _Avoid_: invalid、有争议
 现有证据无法判定，需要补证或转人工。它是独立结论，不是"可争议"的弱化版。
 _Avoid_: unknown、拿不准
 
+**Policy Gap（无规则可裁）**:
+政策对两条相互矛盾的规则没给优先级，于是没有任何规则能裁定这一笔。它与"证据缺失"并列，是 Inconclusive 的两种成因之一，不是后者的弱化版——它说的是规则里没有答案，不是证据里没有答案。
+_Avoid_: 证据不足、缺规则、拿不准
+
 **Dispute**:
 Supplier 针对某一笔 Deduction 发起的申诉，一笔扣款同时最多一个进行中的 Dispute。
 _Avoid_: claim、case、ticket
@@ -145,3 +149,13 @@ _Avoid_: 证据缓存、snapshot cache
 **claim**:
 仅指争议文书的结构化部分（金额、诉求、引用、证据、条款依据），与 Verdict 一一投影。**在文书之外的任何语境里，这个词仍然禁用**——扣款是 Deduction，申诉是 Dispute。
 _Avoid_: 用它指代 Deduction 或 Dispute
+
+### 评估
+
+**语料 case（Corpus Case）**:
+一条合成扣款连同它的全部证据，是评估的最小单位。`caseId` 固定，扣款主键由它确定性派生。评估语境里必须带"语料"前缀——单说 case 仍是 Dispute 的禁用用法。
+_Avoid_: 样本、record；回放 cassette 不是 case
+
+**评估格（Evaluation Cell）**:
+"扣款类别 × 证据情形"的交叉格。三类扣款 × 五种证据情形共 15 格，每格 6–7 条。格级数字只作诊断，不设闸门——每格样本量太小。
+_Avoid_: 分桶、bucket

@@ -1,6 +1,6 @@
 package com.deductionaudit.replay;
 
-import com.deductionaudit.shared.PromptMarker;
+import com.deductionaudit.shared.PromptInspection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -22,17 +22,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 @Component
 @Profile("replay")
 public class ReplayChatModel implements ChatModel {
 
-    private static final Pattern DEDUCTION_ID = Pattern.compile("EDI812:([0-9a-fA-F-]{36})");
     private static final ObjectMapper JSON = new ObjectMapper();
 
-    private final ReplayScenario scenario;
+    private final ReplayScenario verdicts;
+    private final ReplayScenario drafts;
     private final Map<UUID, AtomicInteger> attemptCounters = new ConcurrentHashMap<>();
     private final Map<UUID, AtomicInteger> draftCounters = new ConcurrentHashMap<>();
     private final String modelName;
@@ -40,14 +38,21 @@ public class ReplayChatModel implements ChatModel {
     public ReplayChatModel(ResourceLoader resourceLoader,
                            org.springframework.core.env.Environment environment) {
         this.modelName = environment.getProperty("app.model-name", "replay");
-        String location = environment.getProperty("app.replay.scenario", "classpath:replay/scenarios.json");
+        String verdictLocation = environment.getProperty("app.replay.verdict-scenario",
+                "classpath:replay/scenarios.json");
+        String draftLocation = environment.getProperty("app.replay.drafts-scenario",
+                "classpath:replay/scenarios.json");
+        this.verdicts = read(resourceLoader, verdictLocation, modelName);
+        this.drafts = read(resourceLoader, draftLocation, modelName);
+    }
+
+    private static ReplayScenario read(ResourceLoader resourceLoader, String location, String modelName) {
         Resource resource = resourceLoader.getResource(location);
         if (!resource.exists()) {
-            this.scenario = new ReplayScenario(modelName, Map.of(), Map.of());
-            return;
+            return new ReplayScenario(modelName, Map.of(), Map.of());
         }
         try (InputStream stream = resource.getInputStream()) {
-            this.scenario = JSON.readValue(stream, ReplayScenario.class);
+            return JSON.readValue(stream, ReplayScenario.class);
         } catch (IOException e) {
             throw new IllegalStateException("replay scenario could not be read from " + location, e);
         }
@@ -60,10 +65,10 @@ public class ReplayChatModel implements ChatModel {
 
     @Override
     public ChatResponse call(Prompt prompt) {
-        if (isDraft(prompt)) {
-            return draftResponse(deductionId(prompt));
+        if (PromptInspection.isDraft(prompt)) {
+            return draftResponse(PromptInspection.deductionId(prompt));
         }
-        UUID deductionId = deductionId(prompt);
+        UUID deductionId = PromptInspection.deductionId(prompt);
         List<Message> messages = prompt.getInstructions();
         long assistantMessages = messages.stream()
                 .filter(message -> message.getMessageType() == MessageType.ASSISTANT)
@@ -71,7 +76,7 @@ public class ReplayChatModel implements ChatModel {
         int attemptNo = assistantMessages == 0
                 ? attemptCounters.computeIfAbsent(deductionId, id -> new AtomicInteger()).incrementAndGet()
                 : attemptCounters.get(deductionId).get();
-        ReplayScenario.ReplayDeduction deduction = scenario.deductions().get(deductionId.toString());
+        ReplayScenario.ReplayDeduction deduction = verdicts.deductions().get(deductionId.toString());
         if (deduction == null) {
             throw new IllegalStateException("no replay scenario for deduction " + deductionId);
         }
@@ -112,37 +117,18 @@ public class ReplayChatModel implements ChatModel {
                 .build();
     }
 
-    private static boolean isDraft(Prompt prompt) {
-        for (Message message : prompt.getInstructions()) {
-            if (message.getText() != null && message.getText().contains(PromptMarker.DRAFT)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private ChatResponse draftResponse(UUID deductionId) {
         int index = draftCounters.computeIfAbsent(deductionId, id -> new AtomicInteger()).incrementAndGet();
-        List<ReplayScenario.ReplayDraft> drafts = scenario.drafts().get(deductionId.toString());
-        if (drafts == null || index > drafts.size()) {
+        List<ReplayScenario.ReplayDraft> entries = drafts.drafts().get(deductionId.toString());
+        if (entries == null || index > entries.size()) {
             throw new IllegalStateException(
                     "no replay draft " + index + " for deduction " + deductionId);
         }
         return ChatResponse.builder()
                 .generations(List.of(new Generation(
-                        AssistantMessage.builder().content(drafts.get(index - 1).text()).build())))
+                        AssistantMessage.builder().content(entries.get(index - 1).text()).build())))
                 .metadata("model", modelName)
                 .build();
-    }
-
-    private static UUID deductionId(Prompt prompt) {
-        for (Message message : prompt.getInstructions()) {
-            Matcher matcher = DEDUCTION_ID.matcher(message.getText() == null ? "" : message.getText());
-            if (matcher.find()) {
-                return UUID.fromString(matcher.group(1));
-            }
-        }
-        throw new IllegalStateException("the prompt carries no deduction id");
     }
 
     private static void sleep(long millis) {

@@ -44,4 +44,7 @@ thing on the queue page that may animate at all.
 - Integration tests need Docker. When the daemon socket is not the default, set
   `$env:DOCKER_HOST="tcp://127.0.0.1:2375"`; without it three tests error out.
 - All data in this repository is synthetic. Never commit generated data, credentials or
-  anything from the parent directory.
+  anything from the parent directory. Two exceptions are frozen fixtures and the only
+  source of truth, and they are committed on purpose: `src/main/resources/eval/corpus/`
+  and `src/test/resources/eval/baseline/`. Every other generated artefact (PG dumps,
+  traces, exports) stays out.

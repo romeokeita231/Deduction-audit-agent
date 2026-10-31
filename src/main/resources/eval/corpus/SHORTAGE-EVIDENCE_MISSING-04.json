@@ -1,0 +1,41 @@
+{
+  "facts" : {
+    "caseId" : "SHORTAGE-EVIDENCE_MISSING-04",
+    "cell" : {
+      "category" : "SHORTAGE",
+      "situation" : "EVIDENCE_MISSING"
+    },
+    "seed" : 20260328,
+    "retailerId" : "NYC",
+    "reasonCode" : "SHORT",
+    "amount" : 400.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 1,
+    "deductionDaysAgo" : 17,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : "SHP-EVAL-0018",
+      "sku" : null,
+      "invoiceNo" : null,
+      "asn" : {
+        "declaredQty" : 22,
+        "shippedDaysAgo" : 35
+      },
+      "bol" : {
+        "shippedQty" : 22,
+        "shippedDaysAgo" : 35
+      },
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
+  },
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "EVIDENCE_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "SHORTAGE_MISSING_POD"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "facts" : {
+    "caseId" : "PRICE-SUPPORTS_SUPPLIER-03",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "SUPPORTS_SUPPLIER"
+    },
+    "seed" : 20260348,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 130.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 5,
+    "deductionDaysAgo" : 17,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0038",
+      "invoiceNo" : "INV-EVAL-0038",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 47,
+          "validToDaysAgo" : null,
+          "unitPrice" : 18.00
+        }
+      ],
+      "invoiceLine" : {
+        "qty" : 29,
+        "unitPrice" : 18.00
+      },
+      "agreements" : [ ],
+      "settlement" : null
+    }
+  },
+  "expectation" : {
+    "expectedState" : "DEDUCTION_STANDS",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PRICE:SKU-EVAL-0038:@47",
+      "INVOICE:INV-EVAL-0038"
+    ],
+    "oracleBranch" : "PRICE_INVOICE_AT_OR_ABOVE_MASTER"
+  }
+}

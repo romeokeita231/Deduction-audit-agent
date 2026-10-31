@@ -1,0 +1,41 @@
+{
+  "facts" : {
+    "caseId" : "PRICE-EVIDENCE_MISSING-05",
+    "cell" : {
+      "category" : "PRICE_VARIANCE",
+      "situation" : "EVIDENCE_MISSING"
+    },
+    "seed" : 20260364,
+    "retailerId" : "NYC",
+    "reasonCode" : "PRICE",
+    "amount" : 290.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 4,
+    "deductionDaysAgo" : 19,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0054",
+      "invoiceNo" : "INV-EVAL-0054",
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [
+        {
+          "validFromDaysAgo" : 49,
+          "validToDaysAgo" : null,
+          "unitPrice" : 18.50
+        }
+      ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
+  },
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "EVIDENCE_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PRICE_MISSING_INVOICE"
+  }
+}

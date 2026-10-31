@@ -1,0 +1,47 @@
+{
+  "facts" : {
+    "caseId" : "SHORTAGE-CONFLICT_ARBITRATED-03",
+    "cell" : {
+      "category" : "SHORTAGE",
+      "situation" : "CONFLICT_ARBITRATED"
+    },
+    "seed" : 20260334,
+    "retailerId" : "NYC",
+    "reasonCode" : "SHORT",
+    "amount" : 170.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 18,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : "SHP-EVAL-0024",
+      "sku" : null,
+      "invoiceNo" : null,
+      "asn" : {
+        "declaredQty" : 79,
+        "shippedDaysAgo" : 32
+      },
+      "bol" : {
+        "shippedQty" : 74,
+        "shippedDaysAgo" : 32
+      },
+      "pod" : {
+        "receivedQty" : 71,
+        "receivedDaysAgo" : 23
+      },
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
+  },
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "BOL:SHP-EVAL-0024",
+      "POD:SHP-EVAL-0024"
+    ],
+    "oracleBranch" : "SHORTAGE_ASN_BOL_DISAGREE_BOL_WINS"
+  }
+}
