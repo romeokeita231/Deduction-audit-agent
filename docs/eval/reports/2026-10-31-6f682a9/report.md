@@ -1,28 +1,43 @@
-# CI fixture 评估报告
+# 评估报告
 
-2026-10-31 · commit `6f682a9` · `schemaVersion` 2 · 15 条语料（三类 × 五种情形各 1 条）
+2026-10-31 · commit `6f682a9` · `schemaVersion` 2 · 15 条语料
 
-这份报告来自回放 cassette，不调模型，所以它衡量的是管线，不是模型的判断力（[ADR 0007](../../../adr/0007-ci-runs-pipeline-not-model.md)）。oracle 是代码，标注在语料里，两者都冻结。
+本次为 replay 模式，回放 cassette，不调用模型。语料与 oracle 冻结，时间由真时钟解析窗口。
+
+`metrics.json` 钉住 corpus sha256 `891be561cf8cfaeae5368c6ca5d62916361e0a689659b7f3ad5db67b765906a3`、policy sha256 `3dde491d3d993fb2dbaa3a9d727e03864285fc8e223a25179ed614a5d89fc2d8`、commit sha 与 `schemaVersion`。
+
+负向对照来自 manifest：
+- `PRICE-SUPPORTS_RETAILER-01` — draft unavailable must surface as DRAFT_UNAVAILABLE and lower the yield
 
 ## 指标 1 · 判决一致率
 
-15/15 与 oracle 一致；四态召回各格均为满分。这一格全部命中是预期内的——回放 cassette 本身就是按 oracle 冻结的判决录下来的。
+micro exact-match **15/15**。四态 one-vs-rest 召回：
+
+- `DEDUCTION_STANDS`: 3/3
+- `DISPUTABLE`: 6/6
+- `EVIDENCE_GAP`: 3/3
+- `POLICY_GAP`: 3/3
+
+三个 category 的 exact-match：
+
+- `SHORTAGE`: 5/5
+- `PRICE_VARIANCE`: 5/5
+- `PROMOTION`: 5/5
 
 ## 指标 2 · 证据引用
 
-只在 `claim.supportingEvidence` 上计算，引用必须落在封闭集内。15 条里 5 条产出 claim，精确率与召回的分母都是这 5 条实际引用的 10 个 ID。
+只在 `claim.supportingEvidence` 上计算。分母为 oracle 判 `DISPUTABLE` 的 6 条。剔除行：无 claim 3 条、字段不对 3 条、无规则可裁 3 条。实际产出 claim 的 case 5 条，其中零引用 0 条。
+
+- precision: 10/10
+- recall: 10/10
 
 ## 指标 3 · 文书结构
 
-结构合格率 5/5，分母只含实际产出的文书；产出率 **5/6**。
-
-分母 6 是 oracle 判 `DISPUTABLE` 的条数，分子 5 是真正产出了文书的条数。差的这 1 条不是管线丢失，而是刻意的负向对照：**`PRICE-SUPPORTS_RETAILER-01`** 在 `ci-manifest.json` 里带着 `why`、在 drafts 通道里没有条目，它存在的唯一目的就是让"起草失败"必须显式可见——该行 `status` 停在 `AWAITING_ACTION`、`error` 写成 `DRAFT_UNAVAILABLE: draft missing`、`narrative` 为 `null`，并被计进上述产出率的分母。绿态的 fixture 原本覆盖不到这条路径，这一条把它补上了。
+结构合格率 **5/5**，分母只含实际产出的文书。产出率 **5/6**，分子是实际产出的文书数，分母是 oracle 判 `DISPUTABLE` 的条数。两个数永不相乘。起草失败的行把 `error` 写在 NDJSON 里，仍计入产出率的分母。
 
 ## 复现
 
 ```powershell
-$env:DOCKER_HOST="tcp://127.0.0.1:2375"
 mvn -B test -Dtest=CiFixtureTest
+python -m eval.metrics docs/eval/reports/2026-10-31-6f682a9/results.ndjson --report docs/eval/reports --commit 6f682a9 --mode replay --manifest src/test/resources/eval/ci-manifest.json
 ```
-
-`metrics.json` 钉住 corpus sha256、policy sha256、commit sha 与 `schemaVersion`；`negativeControls` 与 manifest 双向同步，由 `theBaselineMetricsMirrorTheManifestsNegativeControls` 守着。
