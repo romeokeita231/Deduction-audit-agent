@@ -162,6 +162,28 @@ class Metric3Test(unittest.TestCase):
             "BOL:SHP-2 came before the shortage deduction of 480.00 USD")
         self.assertFalse(skeleton_passes(broken))
 
+    def test_past_tense_reversed_in_the_opening_is_not_an_ask(self):
+        sample = dict(fixture()[1])
+        sample["narrative"] = NARRATIVE.replace(
+            "is not supported by the documents the retailer attached.",
+            "is not supported by the documents the retailer attached and should be reversed.")
+        self.assertTrue(skeleton_passes(sample))
+
+    def test_please_confirm_counts_as_a_closing(self):
+        sample = dict(fixture()[1])
+        sample["narrative"] = NARRATIVE.replace(
+            "We remain available to provide any further documentation you may need, "
+            "and we look forward to closing this case promptly.",
+            "We remain available to provide any further documentation you may need.")
+        self.assertTrue(skeleton_passes(sample))
+
+    def test_an_ask_before_the_first_evidence_id_fails(self):
+        sample = dict(fixture()[1])
+        sample["narrative"] = NARRATIVE.replace(
+            "This letter concerns the shortage deduction",
+            "We reverse the shortage deduction")
+        self.assertFalse(skeleton_passes(sample))
+
 
 class ComputeAndLoadTest(unittest.TestCase):
 

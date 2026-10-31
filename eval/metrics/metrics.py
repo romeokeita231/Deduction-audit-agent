@@ -17,7 +17,8 @@ CATEGORY_PREFIX = {
     "PROMOTION": "PROMOTION",
 }
 EVIDENCE_ID = re.compile(r"(?:ASN|BOL|POD|PRICE|INVOICE|PROMO|SETTLE|EDI812):")
-CLOSING_MARKERS = ("look forward", "thank you", "do not hesitate", "closing this case")
+CLOSING_MARKERS = ("look forward", "thank you", "do not hesitate", "closing this case",
+                   "please confirm", "we appreciate", "regards", "sincerely")
 
 
 class MetricsError(ValueError):
@@ -213,12 +214,15 @@ def skeleton_passes(row):
     if not evidence or min(evidence) <= amount_at:
         return False
     first_evidence = min(evidence)
-    asks = [position for position in (narrative.find("reverse"), narrative.find("credit memo"))
-            if position >= 0]
+    asks = [match.start() for match in re.finditer(r"\breverse\b", narrative)]
+    credit_memo_at = narrative.find("credit memo")
+    if credit_memo_at >= 0:
+        asks.append(credit_memo_at)
     if not asks or min(asks) <= first_evidence:
         return False
     ask_at = min(asks)
-    closes = [position for position in (narrative.find(marker) for marker in CLOSING_MARKERS)
+    lowered = narrative.lower()
+    closes = [position for position in (lowered.find(marker) for marker in CLOSING_MARKERS)
               if position > ask_at]
     if not closes:
         return False
