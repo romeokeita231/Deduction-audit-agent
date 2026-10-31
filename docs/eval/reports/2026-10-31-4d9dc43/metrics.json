@@ -10,7 +10,7 @@
   },
   "negativeControls": [],
   "controlsSource": "none",
-  "commit": "6b7bad1998d5cd2a2ca645c0bf70c11d254490cb",
+  "commit": "4d9dc435d7df37ac810aecc6808eb83100188e11",
   "caseCount": 105,
   "corpusCaseCount": 105,
   "limitedBy": null,
@@ -436,7 +436,7 @@
   },
   "metric3": {
     "structuralPass": {
-      "k": 11,
+      "k": 20,
       "n": 21
     },
     "productionRate": {
