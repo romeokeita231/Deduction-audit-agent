@@ -285,3 +285,7 @@ def main(argv=None):
     else:
         print(text, end="")
     return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
