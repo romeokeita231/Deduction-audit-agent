@@ -8,6 +8,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 
 - **语料在 `src/main/resources/eval/corpus/`，一条一个 JSON 文件，文件名排序即固定顺序。** 放在 `test` 下，`eval:live` 在 main 作用域跑就读不到。loader 也只有一份，放 `src/main/java`，JUnit 与 `eval:live` 都调它。它与 `src/test/resources/eval/baseline/` 是入库的冻结 fixture，这与 `AGENTS.md` 里"禁止提交生成数据"的例外一致。
 - **时间是相对偏移，不是绝对时间戳。** JSON 存 `receivedDaysAgo` 这类偏移，loader 用注入的 `Clock` 解成 `Instant`。`eval:live` 用真时钟，CI 用固定的 `2026-03-10T06:59:00Z`。写死绝对时间必然一边废掉：要么 live 里全部过期，要么 CI 结果依赖墙钟。
+- **语料引用的商户与原因码属于全局参考数据，由 migration 维护**（`V3__reference_data.sql` 写入 `retailer` 与 `reason_code_mapping`）。它与 `src/test/resources/seed.sql` 是幂等叠加关系：两边都只插不删、按主键或业务键 `ON CONFLICT DO NOTHING`，谁先谁后都不冲突。有一条防漂移测试扫描语料里去重后的 `retailerId` / `reasonCode`，任一值不在 V3 里即红并点名 `caseId`。
 - **`caseId` 固定，扣款主键由 `UUID.nameUUIDFromBytes(caseId)` 确定性派生。** 用 JDK 自带的 v3，不手写 v5 的 SHA-1 加版本位手术；配一条 golden UUID 断言防命名空间漂移，命名空间常量固定在 loader 里。
 - **oracle 在 `src/main/java/com/deductionaudit/eval/oracle`**，只 import `domain` 的枚举，**禁止 import `agent/validators`**——那会变成用同一份实现测自己。它读的是与 prompt 同一个 `classpath:policy/audit-policy.md`，同源不需要额外机制。
 - **政策 hash 是 oracle 源码里的编译期常量**，不是旁挂的 `.sha256` 文件。放文件里，改政策的人顺手也能改 hash，闸门就没了。放源码里，政策一改必然产生一次可见的代码 diff，oracle 拒绝运行直到有人确认。常量存**全量 sha256**，启动时断言它的前 12 位等于 `PolicyProvider.version()`（`new PolicyProvider()` 无依赖，`EvaluationAgent.policyVersion()` 只是原样委托它）。常量算法钉死为 `PolicyProvider.sha256(text)`：不要用 `Files.readAllBytes` 走原始字节——`PolicyProvider` 是对解码后的字符串再编码求哈希，两条路径在 BOM 或异常字节上会分叉，而这个常量的全部意义就是与它同源。
