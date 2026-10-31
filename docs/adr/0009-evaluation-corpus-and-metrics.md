@@ -45,6 +45,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 - **头条 = 产出的文书中结构合格占比**，分母只含实际产出的文书，守住"这个数只反映管线"（[ADR 0008](./0008-dispute-document-projection-and-narrative.md)）。
 - **第二个数 = 产出率**，实际产文书数 / oracle 判 `DISPUTABLE` 的条数，让"该产没产"可见。两个数并列报，不相乘。
 - **骨架按字符偏移的先后判，不按段索引。** 契约允许 3–5 段，骨架是 4 部分；按段索引会把合法的 3 段文书系统性判成 3/4。判据：金额在最前、证据 ID 居中、`reverse` 与 `credit memo` 在后、收尾在最后。
+- **P4 以可判形为准：ask 之后出现收尾标记，且标记之后不再出现任何证据 ID。** `reverse` 按词边界匹配（`\breverse\b`），不命中论证段里的 `reversed`；收尾标记是固定集合，命中后才算收尾。提示词里另有两句约束——收尾段不超过 25 词、不含数字——它们约束的是模型行为，**不进指标**：收尾段在 3–5 段契约下无法独立切分，"25 词"是可调的经验值而非可判事实。这是首次 live 复盘后定的口径：判据修正前后各有一次结果，修正前 11/21 为判据两处假阴性所致，修正后 20/21，剩余 1 条是模型把金额写了两次。
 - **五条硬校验不进这个比率。** 它们是写入时的闸门：违反的文书根本不落库（走 500），已存文书恒为 100%。算进比例等于给分子加常数，它是门，由集成测试守。
 - 词数与段数界、分词器（空白切分）、金额字符串由导出器写进 NDJSON 的 `contract` 字段，Python 只执行，不各写一份。
 
@@ -65,6 +66,7 @@ M6 的语料与指标口径一次性定死：约 100 条合成语料由 oracle �
 - **失败条目必须带 `why`**，写成负向对照（例如"模型引用封闭集外 ID，必须被 validator 拒"），并给 `expected: {status, parkedReason}`。CI 断言混淆矩阵逐格一致，断的不是"分数 ≥ X"。没标 `why` 的低基线就是把草率固化。
 - 快照 diff 的是归一化后的 NDJSON 与 `metrics.json`，提交在 `src/test/resources/eval/baseline/`。
 - **报告存档进仓库**：`docs/eval/reports/<YYYY-MM-DD>-<sha>/` 下 `report.md` + `metrics.json` + `results.ndjson`。`metrics.json` 钉住 corpus 的 sha256、`policy/audit-policy.md` 的 sha256、commit sha、`schemaVersion` 四项，否则一年后语料改过，旧报告的分母无法复原。CI 只 diff，不写报告；报告由人跑 `eval:live` 后提交。
+- **live 必须在干净的库上跑，收尾 `docker compose down -v`。** live 会把真实行写进共享库：`caseId` 派生出的主键是确定的，第二次在同一套库上跑必然主键冲突，或在残留状态上继续，得到无法复现的结果。存档里的 `results.ndjson` 因此只有在"空库 + 该 commit"下才可重放。
 
 ## Consequences
 
