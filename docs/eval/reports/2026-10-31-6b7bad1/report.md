@@ -1,6 +1,6 @@
 # 评估报告
 
-2026-10-31 · commit `544f8ed` · `schemaVersion` 2 · 105 条语料
+2026-10-31 · commit `6b7bad1` · `schemaVersion` 2 · 105 条语料
 
 本次为 live 模式，真打模型，不回放 cassette。语料与 oracle 冻结，时间由真时钟解析窗口。
 
@@ -38,5 +38,5 @@ micro exact-match **63/105**。四态 one-vs-rest 召回：
 
 ```powershell
 mvn -P live spring-boot:run
-python -m eval.metrics target/eval/results.ndjson --report docs/eval/reports --commit 544f8ed --mode live
+python -m eval.metrics target/eval/results.ndjson --report docs/eval/reports --commit 6b7bad1 --mode live
 ```
