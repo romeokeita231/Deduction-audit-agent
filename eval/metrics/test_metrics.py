@@ -3,8 +3,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from .metrics import (MetricsError, actual_state, compute, expected_state, load_rows,
-                      metric1, metric2, metric3, policy_sha256, skeleton_passes)
+from .metrics import (MetricsError, actual_state, archive, compute, expected_state, load_rows,
+                      metric1, metric2, metric3, policy_sha256, render_report, skeleton_passes)
 
 CONTRACT = {
     "summaryWords": {"min": 120, "max": 250},
@@ -179,6 +179,47 @@ class ComputeAndLoadTest(unittest.TestCase):
         self.assertEqual(4, report["corpus"]["cases"])
         self.assertEqual("p", report["policy"]["sha256"])
         self.assertEqual("sha", report["commit"])
+        self.assertEqual(4, report["caseCount"])
+        self.assertEqual(4, report["corpusCaseCount"])
+        self.assertIsNone(report["limitedBy"])
+        self.assertEqual("none", report["controlsSource"])
+        self.assertEqual("replay", report["mode"])
+
+    def test_compute_records_a_limited_run(self):
+        report = compute(fixture(), "c", "p", "sha", limited_by=5, controls_source="none",
+                         mode="live", corpus_case_count_value=105)
+        self.assertEqual(4, report["caseCount"])
+        self.assertEqual(105, report["corpusCaseCount"])
+        self.assertEqual(5, report["limitedBy"])
+        self.assertEqual("live", report["mode"])
+
+    def test_live_report_states_that_no_control_was_applied(self):
+        template = Path(__file__).resolve().parents[2] / "eval/templates/report.zh.md"
+        report = compute(fixture(), "c", "p", "sha", limited_by=5, controls_source="none",
+                         mode="live")
+        text = render_report(report, template)
+        self.assertIn("本次为 live 模式", text)
+        self.assertIn("本次为 live 运行", text)
+        self.assertIn("截断运行，本次指标不可用于结论", text)
+        self.assertIn("4 条语料", text)
+        self.assertNotIn("k/n", text)
+
+    def test_replay_report_does_not_claim_live_model_failures(self):
+        template = Path(__file__).resolve().parents[2] / "eval/templates/report.zh.md"
+        report = compute(fixture(), "c", "p", "sha", controls_source="none", mode="replay")
+        text = render_report(report, template)
+        self.assertIn("本次为 replay 模式", text)
+        self.assertNotIn("产出率差额来自模型实际失败", text)
+        self.assertNotIn("截断运行", text)
+
+    def test_archive_refuses_metrics_without_gate_fields(self):
+        for field in ("mode", "caseCount", "corpusCaseCount", "limitedBy"):
+            report = compute(fixture(), "c", "p", "sha")
+            del report[field]
+            with tempfile.TemporaryDirectory() as directory:
+                with self.assertRaises(MetricsError):
+                    archive(report, Path(directory) / "results.ndjson", directory)
+                self.assertEqual([], list(Path(directory).iterdir()))
 
     def test_load_rows_rejects_mixed_versions(self):
         with tempfile.TemporaryDirectory() as directory:

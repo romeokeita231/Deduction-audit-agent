@@ -35,6 +35,9 @@ public class EvalCaseDriver {
     public static final int MAX_CONCURRENCY = 8;
     public static final String DRAFT_UNAVAILABLE = "DRAFT_UNAVAILABLE";
     public static final String DRAFT_UNAVAILABLE_ERROR = DRAFT_UNAVAILABLE + ": draft missing";
+    public static final String DRAFT_INCONSISTENT = "DRAFT_INCONSISTENT";
+    public static final String DRAFT_INCONSISTENT_ERROR =
+            DRAFT_INCONSISTENT + ": the draft failed the contract";
 
     private static final ObjectMapper JSON = new ObjectMapper();
 
@@ -72,10 +75,13 @@ public class EvalCaseDriver {
                 narrative = disputed.document().narrative();
                 digest = JSON.valueToTree(disputed.document().digest());
             } catch (ApiException e) {
-                if (e.status() != 503) {
+                if (e.status() == 503) {
+                    error = DRAFT_UNAVAILABLE_ERROR;
+                } else if (e.status() == 500) {
+                    error = DRAFT_INCONSISTENT_ERROR;
+                } else {
                     throw e;
                 }
-                error = DRAFT_UNAVAILABLE_ERROR;
             }
         }
 
@@ -125,6 +131,17 @@ public class EvalCaseDriver {
             return List.copyOf(rows);
         } finally {
             pool.shutdown();
+        }
+    }
+
+    public static int expectedRowCount(Integer limit, int corpusTotal) {
+        return limit == null ? corpusTotal : Math.min(limit, corpusTotal);
+    }
+
+    public static void assertRowCount(List<NdjsonExporter.EvalRow> rows, int expected) {
+        if (rows.size() != expected) {
+            throw new IllegalStateException("the export holds " + rows.size() + " rows but the corpus holds "
+                    + expected + " cases");
         }
     }
 

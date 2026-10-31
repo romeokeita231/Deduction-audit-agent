@@ -3,6 +3,7 @@ package com.deductionaudit.eval;
 import com.deductionaudit.IntegrationTestBase;
 import com.deductionaudit.domain.Claim;
 import com.deductionaudit.domain.DeductionCategory;
+import com.deductionaudit.domain.VerdictValue;
 import com.deductionaudit.eval.corpus.CorpusLoader;
 import com.deductionaudit.eval.corpus.CorpusLoader.LoadedCase;
 import com.deductionaudit.eval.corpus.EvidenceToken;
@@ -30,6 +31,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -40,6 +42,8 @@ import java.util.stream.Collectors;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EvalCaseDriverTest extends IntegrationTestBase {
@@ -139,6 +143,55 @@ class EvalCaseDriverTest extends IntegrationTestBase {
         assertTrue(stub.peakConcurrency() >= 2, "the driver ran the cases serially");
     }
 
+    @Test
+    void draftFailuresBecomeErrorRowsWithoutAbortingTheBatch() {
+        List<LoadedCase> disputable = corpus.load(FIXED).stream()
+                .filter(loaded -> loaded.expectation().expectedState() == VerdictValue.DISPUTABLE)
+                .limit(2)
+                .toList();
+        assertEquals(2, disputable.size());
+        stub.reset();
+        stub.register(disputable);
+        UUID unavailable = disputable.get(0).deduction().id();
+        UUID inconsistent = disputable.get(1).deduction().id();
+        stub.failDraft(unavailable);
+        stub.corruptDraft(inconsistent);
+
+        List<NdjsonExporter.EvalRow> rows = driver.runAll(disputable, 2);
+        assertEquals(2, rows.size());
+        NdjsonExporter.EvalRow missing = byCase(rows, disputable.get(0).facts().caseId());
+        NdjsonExporter.EvalRow invalid = byCase(rows, disputable.get(1).facts().caseId());
+        assertEquals(EvalCaseDriver.DRAFT_UNAVAILABLE_ERROR, missing.error());
+        assertNull(missing.narrative());
+        assertEquals(EvalCaseDriver.DRAFT_INCONSISTENT_ERROR, invalid.error());
+        assertNull(invalid.narrative());
+        assertEquals("AWAITING_ACTION", missing.status());
+        assertEquals("AWAITING_ACTION", invalid.status());
+        assertEquals(1, stub.draftCalls(unavailable));
+        assertEquals(1, stub.draftCalls(inconsistent));
+    }
+
+    @Test
+    void theRowCountAssertionNamesExpectedAndActual() {
+        EvalCaseDriver.assertRowCount(List.of(), 0);
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> EvalCaseDriver.assertRowCount(List.of(), 15));
+        assertTrue(error.getMessage().contains("0"));
+        assertTrue(error.getMessage().contains("15"));
+    }
+
+    @Test
+    void theRowCountAssertionUsesTheSmallerOfLimitAndCorpusSize() {
+        int total = corpus.load(FIXED).size();
+        assertEquals(105, total);
+        List<NdjsonExporter.EvalRow> five = Collections.nCopies(5, (NdjsonExporter.EvalRow) null);
+        EvalCaseDriver.assertRowCount(five, EvalCaseDriver.expectedRowCount(5, total));
+        IllegalStateException error = assertThrows(IllegalStateException.class,
+                () -> EvalCaseDriver.assertRowCount(five, EvalCaseDriver.expectedRowCount(null, total)));
+        assertTrue(error.getMessage().contains("5"));
+        assertTrue(error.getMessage().contains("105"));
+    }
+
     private List<LoadedCase> cases() {
         List<LoadedCase> all = corpus.load(FIXED);
         List<LoadedCase> selected = new ArrayList<>();
@@ -158,6 +211,9 @@ class EvalCaseDriverTest extends IntegrationTestBase {
     static final class StubChatModel implements ChatModel {
 
         private final Map<UUID, LoadedCase> cases = new ConcurrentHashMap<>();
+        private final Map<UUID, RuntimeException> unavailable = new ConcurrentHashMap<>();
+        private final Map<UUID, Boolean> inconsistent = new ConcurrentHashMap<>();
+        private final Map<UUID, AtomicInteger> drafts = new ConcurrentHashMap<>();
         private final AtomicInteger active = new AtomicInteger();
         private final AtomicInteger peak = new AtomicInteger();
 
@@ -165,6 +221,25 @@ class EvalCaseDriverTest extends IntegrationTestBase {
             for (LoadedCase entry : loaded) {
                 cases.put(entry.deduction().id(), entry);
             }
+        }
+
+        void reset() {
+            cases.clear();
+            unavailable.clear();
+            inconsistent.clear();
+            drafts.clear();
+        }
+
+        void failDraft(UUID id) {
+            unavailable.put(id, new RuntimeException("stub model unavailable"));
+        }
+
+        void corruptDraft(UUID id) {
+            inconsistent.put(id, true);
+        }
+
+        int draftCalls(UUID id) {
+            return drafts.getOrDefault(id, new AtomicInteger()).get();
         }
 
         int peakConcurrency() {
@@ -227,8 +302,15 @@ class EvalCaseDriverTest extends IntegrationTestBase {
         }
 
         private ChatResponse draft(Prompt prompt) {
+            UUID id = PromptInspection.deductionId(prompt);
+            drafts.computeIfAbsent(id, key -> new AtomicInteger()).incrementAndGet();
+            RuntimeException failure = unavailable.get(id);
+            if (failure != null) {
+                throw failure;
+            }
             Claim claim = claim(prompt);
-            return text(JSON.createObjectNode().put("narrative", narrative(claim)).toString());
+            String narrative = inconsistent.containsKey(id) ? "# not a letter" : narrative(claim);
+            return text(JSON.createObjectNode().put("narrative", narrative).toString());
         }
 
         private static Claim claim(Prompt prompt) {

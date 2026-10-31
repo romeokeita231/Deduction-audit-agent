@@ -51,15 +51,16 @@ class CiFixtureTest extends IntegrationTestBase {
         assertCassetteCoverage(cases, entries);
 
         List<NdjsonExporter.EvalRow> rows = driver.runAll(cases, EvalCaseDriver.MAX_CONCURRENCY);
-        assertEquals(entries.size(), rows.size());
+        EvalCaseDriver.assertRowCount(rows, entries.size());
         for (int index = 0; index < entries.size(); index++) {
             assertEquals(entries.get(index).caseId(), rows.get(index).caseId());
         }
 
         Path results = work.resolve("results.ndjson");
         NdjsonExporter.write(results, rows, true);
-        Path metrics = work.resolve("metrics.json");
-        runMetrics(results, metrics);
+        Path archive = work.resolve("archive");
+        runMetrics(results, archive);
+        Path metrics = archivedMetrics(archive);
 
         if (Boolean.getBoolean("eval.update-baseline")) {
             writeBaseline(results, metrics);
@@ -168,15 +169,26 @@ class CiFixtureTest extends IntegrationTestBase {
         return JSON.readTree(path.toFile());
     }
 
-    private void runMetrics(Path results, Path metrics) throws IOException, InterruptedException {
+    private void runMetrics(Path results, Path archive) throws IOException, InterruptedException {
         Process process = new ProcessBuilder("python", "-m", "eval.metrics", results.toString(),
-                "--output", metrics.toString())
+                "--report", archive.toString(), "--commit", "ci-fixture", "--mode", "replay",
+                "--manifest", ROOT.resolve("src/test/resources/eval/ci-manifest.json").toString())
                 .directory(ROOT.toFile())
                 .redirectErrorStream(true)
                 .start();
         String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
         assertEquals(0, process.waitFor(), "the metrics package failed:\n" + output);
-        assertTrue(Files.exists(metrics), "the metrics package wrote no output");
+    }
+
+    private static Path archivedMetrics(Path archive) throws IOException {
+        try (java.util.stream.Stream<Path> paths = Files.list(archive)) {
+            Path directory = paths.filter(Files::isDirectory).findFirst()
+                    .orElseThrow(() -> new IllegalStateException("the metrics package archived no report"));
+            assertTrue(Files.exists(directory.resolve("metrics.json")), "the archive holds no metrics.json");
+            assertTrue(Files.exists(directory.resolve("report.md")), "the archive holds no report.md");
+            assertTrue(Files.exists(directory.resolve("results.ndjson")), "the archive holds no results.ndjson");
+            return directory.resolve("metrics.json");
+        }
     }
 
     private void writeBaseline(Path results, Path metrics) throws IOException {

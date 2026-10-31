@@ -1,5 +1,6 @@
 {
   "schemaVersion": 2,
+  "mode": "replay",
   "corpus": {
     "sha256": "891be561cf8cfaeae5368c6ca5d62916361e0a689659b7f3ad5db67b765906a3",
     "cases": 15
@@ -13,7 +14,11 @@
       "why": "draft unavailable must surface as DRAFT_UNAVAILABLE and lower the yield"
     }
   ],
-  "commit": "6f682a92bd605d3911c4e007e97ac53d211b2e29",
+  "controlsSource": "manifest",
+  "commit": "ci-fixture",
+  "caseCount": 15,
+  "corpusCaseCount": 105,
+  "limitedBy": null,
   "metric1": {
     "microExactMatch": {
       "k": 15,
