@@ -41,10 +41,36 @@ thing on the queue page that may animate at all.
 - `origin` is `ssh://git@ssh.github.com:443/...`; `github.com:443` is unreachable from this
   machine. `gh` goes through `api.github.com` and works without the override above.
 - Design docs and ADRs are written in Chinese; code, comments and commit messages are English.
-- Integration tests need Docker. When the daemon socket is not the default, set
-  `$env:DOCKER_HOST="tcp://127.0.0.1:2375"`; without it three tests error out.
+- Integration tests need Docker, and on this machine they need the TCP socket even though the
+  `docker` CLI works without it. Set it before every `mvn test`:
+
+  ```powershell
+  $env:DOCKER_HOST="tcp://127.0.0.1:2375"
+  ```
+
+  Without it seven Testcontainers tests error out while the rest stay green, which reads like a
+  code regression. It is not.
 - All data in this repository is synthetic. Never commit generated data, credentials or
   anything from the parent directory. Two exceptions are frozen fixtures and the only
   source of truth, and they are committed on purpose: `src/main/resources/eval/corpus/`
   and `src/test/resources/eval/baseline/`. Every other generated artefact (PG dumps,
   traces, exports) stays out.
+
+## Eval work
+
+`docs/adr/0009-evaluation-corpus-and-metrics.md` is the contract. Four rules that cost real
+time when broken:
+
+- Never hand-edit a generated artefact: `docs/eval/reports/*/report.md`, `metrics.json`,
+  `results.ndjson`, `src/test/resources/eval/baseline/*`. Re-run `eval/metrics` instead. A
+  hand-edited report cannot be recomputed by a third party, which is the whole point of
+  committing it.
+- An archive is only reproducible on an empty database at the commit it pins. Running
+  `eval:live` twice against the same Docker volume collides on `caseId`-derived keys. Start
+  clean and finish with `docker compose down -v`.
+- Changing a metric's definition or a structural predicate is a decision, not a fix. When you
+  do either, keep the before and after numbers in the report and name which cases moved and
+  why. A report with only the new number is indistinguishable from a model that improved.
+- Classify what you are doing in the commit message: `fix(eval)` for a checker bug that
+  produced wrong numbers, `feat(eval)` for a new capability, `docs` for a rule that changed.
+  Mixing a predicate change into a fix commit hides it from the next review.
