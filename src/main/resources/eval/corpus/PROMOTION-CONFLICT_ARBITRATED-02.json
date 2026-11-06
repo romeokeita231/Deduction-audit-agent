@@ -1,0 +1,61 @@
+{
+  "facts" : {
+    "caseId" : "PROMOTION-CONFLICT_ARBITRATED-02",
+    "cell" : {
+      "category" : "PROMOTION",
+      "situation" : "CONFLICT_ARBITRATED"
+    },
+    "seed" : 20260403,
+    "retailerId" : "NYC",
+    "reasonCode" : "PROMO",
+    "amount" : 170.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 5,
+    "deductionDaysAgo" : 13,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0093",
+      "invoiceNo" : null,
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [
+        {
+          "docId" : "PA-EVAL-0093",
+          "validFromDaysAgo" : 73,
+          "validToDaysAgo" : null,
+          "clauses" : [
+            {
+              "clauseNo" : "3.1",
+              "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
+              "effect" : "SUPPORTS_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.2",
+              "text" : "Retailer earns a five percent rebate; the summary in the audit system understates it.",
+              "effect" : "CONFLICTS_WITH_SUMMARY"
+            }
+          ]
+        }
+      ],
+      "settlement" : {
+        "docId" : "PA-EVAL-0093",
+        "accruedAmount" : 520.00,
+        "settledAmount" : 363.82,
+        "settledDaysAgo" : 23
+      }
+    }
+  },
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PROMO:PA-EVAL-0093·§3.1",
+      "SETTLE:PA-EVAL-0093"
+    ],
+    "oracleBranch" : "PROMOTION_CLAUSE_OVERRIDES_SUMMARY"
+  }
+}

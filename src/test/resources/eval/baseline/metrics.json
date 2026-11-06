@@ -1,0 +1,452 @@
+{
+  "schemaVersion": 2,
+  "mode": "replay",
+  "corpus": {
+    "sha256": "891be561cf8cfaeae5368c6ca5d62916361e0a689659b7f3ad5db67b765906a3",
+    "cases": 15
+  },
+  "policy": {
+    "sha256": "3dde491d3d993fb2dbaa3a9d727e03864285fc8e223a25179ed614a5d89fc2d8"
+  },
+  "negativeControls": [
+    {
+      "caseId": "PRICE-SUPPORTS_RETAILER-01",
+      "why": "draft unavailable must surface as DRAFT_UNAVAILABLE and lower the yield"
+    }
+  ],
+  "controlsSource": "manifest",
+  "commit": "ci-fixture",
+  "caseCount": 15,
+  "corpusCaseCount": 105,
+  "limitedBy": null,
+  "metric1": {
+    "microExactMatch": {
+      "k": 15,
+      "n": 15
+    },
+    "stateRecall": {
+      "DEDUCTION_STANDS": {
+        "k": 3,
+        "n": 3
+      },
+      "DISPUTABLE": {
+        "k": 6,
+        "n": 6
+      },
+      "EVIDENCE_GAP": {
+        "k": 3,
+        "n": 3
+      },
+      "POLICY_GAP": {
+        "k": 3,
+        "n": 3
+      }
+    },
+    "categoryExactMatch": {
+      "SHORTAGE": {
+        "k": 5,
+        "n": 5
+      },
+      "PRICE_VARIANCE": {
+        "k": 5,
+        "n": 5
+      },
+      "PROMOTION": {
+        "k": 5,
+        "n": 5
+      }
+    },
+    "confusion": [
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "DISPUTABLE",
+        "n": 1
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "POLICY_GAP",
+        "n": 1
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "EVIDENCE_GAP",
+        "n": 1
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "DISPUTABLE",
+        "n": 1
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "DEDUCTION_STANDS",
+        "n": 1
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PRICE_VARIANCE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "DISPUTABLE",
+        "n": 1
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "POLICY_GAP",
+        "n": 1
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "EVIDENCE_MISSING",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "EVIDENCE_MISSING",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "EVIDENCE_MISSING",
+        "state": "EVIDENCE_GAP",
+        "n": 1
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "EVIDENCE_MISSING",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "DISPUTABLE",
+        "n": 1
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "DEDUCTION_STANDS",
+        "n": 1
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "PROMOTION",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "DISPUTABLE",
+        "n": 1
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_ARBITRATED",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "CONFLICT_UNARBITRATED",
+        "state": "POLICY_GAP",
+        "n": 1
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "EVIDENCE_GAP",
+        "n": 1
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "EVIDENCE_MISSING",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "DEDUCTION_STANDS",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "DISPUTABLE",
+        "n": 1
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_RETAILER",
+        "state": "POLICY_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "DEDUCTION_STANDS",
+        "n": 1
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "DISPUTABLE",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "EVIDENCE_GAP",
+        "n": 0
+      },
+      {
+        "category": "SHORTAGE",
+        "situation": "SUPPORTS_SUPPLIER",
+        "state": "POLICY_GAP",
+        "n": 0
+      }
+    ]
+  },
+  "metric2": {
+    "denominator": {
+      "oracleDisputable": 6
+    },
+    "exclusions": {
+      "noClaim": 3,
+      "wrongField": 3,
+      "unarbitrated": 3
+    },
+    "claimed": 5,
+    "zeroReferenceCases": 0,
+    "recall": {
+      "k": 10,
+      "n": 10
+    },
+    "precision": {
+      "k": 10,
+      "n": 10
+    }
+  },
+  "metric3": {
+    "structuralPass": {
+      "k": 5,
+      "n": 5
+    },
+    "productionRate": {
+      "k": 5,
+      "n": 6
+    }
+  }
+}

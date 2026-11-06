@@ -6,7 +6,8 @@ spring:
 app:
   model-name: replay
   replay:
-    scenario: classpath:replay/scenarios.json
+    verdict-scenario: classpath:replay/scenarios.json
+    drafts-scenario: classpath:replay/scenarios.json
   evaluation:
     total-budget: 45s
     p95-target: 30s

@@ -1,0 +1,47 @@
+{
+  "facts" : {
+    "caseId" : "SHORTAGE-SUPPORTS_SUPPLIER-06",
+    "cell" : {
+      "category" : "SHORTAGE",
+      "situation" : "SUPPORTS_SUPPLIER"
+    },
+    "seed" : 20260316,
+    "retailerId" : "NYC",
+    "reasonCode" : "SHORT",
+    "amount" : 350.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 18,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : "SHP-EVAL-0006",
+      "sku" : null,
+      "invoiceNo" : null,
+      "asn" : {
+        "declaredQty" : 54,
+        "shippedDaysAgo" : 31
+      },
+      "bol" : {
+        "shippedQty" : 54,
+        "shippedDaysAgo" : 31
+      },
+      "pod" : {
+        "receivedQty" : 54,
+        "receivedDaysAgo" : 23
+      },
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [ ],
+      "settlement" : null
+    }
+  },
+  "expectation" : {
+    "expectedState" : "DEDUCTION_STANDS",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "BOL:SHP-EVAL-0006",
+      "POD:SHP-EVAL-0006"
+    ],
+    "oracleBranch" : "SHORTAGE_POD_EQUALS_BOL"
+  }
+}

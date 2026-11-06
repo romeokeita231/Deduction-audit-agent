@@ -103,4 +103,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>live</id>
+            <properties>
+                <spring-boot.run.profiles>live</spring-boot.run.profiles>
+            </properties>
+        </profile>
+    </profiles>
 </project>

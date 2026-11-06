@@ -1,0 +1,30 @@
+{
+  "defaultModel": "replay",
+  "drafts": {
+    "ae3c4fc3-297c-3120-9590-1e46af9ef6c8": [
+      {
+        "text": "{\"narrative\": \"This letter concerns the shortage deduction of 280.00 USD raised under EDI812:ae3c4fc3-297c-3120-9590-1e46af9ef6c8. We reviewed the record the retailer attached to the claim, and we conclude that the deduction is not supported.\\n\\nThe supporting evidence BOL:SHP-EVAL-0008, POD:SHP-EVAL-0008 shows that the deduction does not rest on the documents the retailer relies on. Each identifier resolves to a record we have already checked, and none of them supports the amount that was withheld.\\n\\nBecause the deduction is not supported, we ask you to reverse it in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"
+      }
+    ],
+    "42536e8e-d91a-3bff-877c-784c1bd6eb13": [
+      {
+        "text": "{\"narrative\": \"This letter concerns the shortage deduction of 250.00 USD raised under EDI812:42536e8e-d91a-3bff-877c-784c1bd6eb13. We reviewed the record the retailer attached to the claim, and we conclude that the deduction is not supported.\\n\\nThe supporting evidence BOL:SHP-EVAL-0022, POD:SHP-EVAL-0022 shows that the deduction does not rest on the documents the retailer relies on. Each identifier resolves to a record we have already checked, and none of them supports the amount that was withheld.\\n\\nBecause the deduction is not supported, we ask you to reverse it in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"
+      }
+    ],
+    "7d1a1990-a555-3b1e-95d0-978cf6b986d0": [
+      {
+        "text": "{\"narrative\": \"This letter concerns the price variance deduction of 410.00 USD raised under EDI812:7d1a1990-a555-3b1e-95d0-978cf6b986d0. We reviewed the record the retailer attached to the claim, and we conclude that the deduction is not supported.\\n\\nThe supporting evidence PRICE:SKU-EVAL-0057:2026-01-28, INVOICE:INV-EVAL-0057 shows that the deduction does not rest on the documents the retailer relies on. Each identifier resolves to a record we have already checked, and none of them supports the amount that was withheld.\\n\\nBecause the deduction is not supported, we ask you to reverse it in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"
+      }
+    ],
+    "f0456510-8082-39ad-a161-a52fea7480e4": [
+      {
+        "text": "{\"narrative\": \"This letter concerns the promotion deduction of 240.00 USD raised under EDI812:f0456510-8082-39ad-a161-a52fea7480e4. We reviewed the record the retailer attached to the claim, and we conclude that the deduction is not supported.\\n\\nThe supporting evidence PROMO:PA-EVAL-0078\\u00b7\\u00a73.1, SETTLE:PA-EVAL-0078 shows that the deduction does not rest on the documents the retailer relies on. Each identifier resolves to a record we have already checked, and none of them supports the amount that was withheld.\\n\\nBecause the deduction is not supported, we ask you to reverse it in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"
+      }
+    ],
+    "80df26b6-b813-35db-bcb0-1f119e6cd8ae": [
+      {
+        "text": "{\"narrative\": \"This letter concerns the promotion deduction of 370.00 USD raised under EDI812:80df26b6-b813-35db-bcb0-1f119e6cd8ae. We reviewed the record the retailer attached to the claim, and we conclude that the deduction is not supported.\\n\\nThe supporting evidence PROMO:PA-EVAL-0092\\u00b7\\u00a73.1, SETTLE:PA-EVAL-0092 shows that the deduction does not rest on the documents the retailer relies on. Each identifier resolves to a record we have already checked, and none of them supports the amount that was withheld.\\n\\nBecause the deduction is not supported, we ask you to reverse it in full and to issue a credit memo for the same amount to our account.\\n\\nPlease confirm the reversal in writing. We remain available to provide any further documentation you may need, and we look forward to closing this case promptly.\"}"
+      }
+    ]
+  }
+}

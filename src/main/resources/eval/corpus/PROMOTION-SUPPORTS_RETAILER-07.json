@@ -1,0 +1,61 @@
+{
+  "facts" : {
+    "caseId" : "PROMOTION-SUPPORTS_RETAILER-07",
+    "cell" : {
+      "category" : "PROMOTION",
+      "situation" : "SUPPORTS_RETAILER"
+    },
+    "seed" : 20260394,
+    "retailerId" : "NYC",
+    "reasonCode" : "PROMO",
+    "amount" : 230.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 3,
+    "deductionDaysAgo" : 7,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0084",
+      "invoiceNo" : null,
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [
+        {
+          "docId" : "PA-EVAL-0084",
+          "validFromDaysAgo" : 67,
+          "validToDaysAgo" : null,
+          "clauses" : [
+            {
+              "clauseNo" : "3.1",
+              "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
+              "effect" : "SUPPORTS_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.2",
+              "text" : "The rebate is settled within thirty days after the rebate window closes.",
+              "effect" : "NEUTRAL"
+            }
+          ]
+        }
+      ],
+      "settlement" : {
+        "docId" : "PA-EVAL-0084",
+        "accruedAmount" : 580.00,
+        "settledAmount" : 389.03,
+        "settledDaysAgo" : 17
+      }
+    }
+  },
+  "expectation" : {
+    "expectedState" : "DISPUTABLE",
+    "expectedParkedReason" : null,
+    "expectedSupportingEvidence" : [
+      "PROMO:PA-EVAL-0084·§3.1",
+      "SETTLE:PA-EVAL-0084"
+    ],
+    "oracleBranch" : "PROMOTION_ACCRUAL_EXCEEDS_SETTLEMENT"
+  }
+}

@@ -1,0 +1,370 @@
+{
+  "defaultModel": "replay",
+  "deductions": {
+    "d55e0681-5e05-33ef-9a5d-69540cc274bf": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getAsn",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0001\"}"
+                },
+                {
+                  "name": "getBol",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0001\"}"
+                },
+                {
+                  "name": "getPod",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0001\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DEDUCTION_STANDS\", \"missingEvidence\": [], \"references\": [\"EDI812:d55e0681-5e05-33ef-9a5d-69540cc274bf\"], \"supportingEvidence\": [\"BOL:SHP-EVAL-0001\", \"POD:SHP-EVAL-0001\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "ae3c4fc3-297c-3120-9590-1e46af9ef6c8": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getAsn",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0008\"}"
+                },
+                {
+                  "name": "getBol",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0008\"}"
+                },
+                {
+                  "name": "getPod",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0008\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DISPUTABLE\", \"missingEvidence\": [], \"references\": [\"EDI812:ae3c4fc3-297c-3120-9590-1e46af9ef6c8\"], \"supportingEvidence\": [\"BOL:SHP-EVAL-0008\", \"POD:SHP-EVAL-0008\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "6176002d-cef3-3c64-97c1-673b2e1d34e1": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getAsn",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0015\"}"
+                },
+                {
+                  "name": "getBol",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0015\"}"
+                },
+                {
+                  "name": "getPod",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0015\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"INCONCLUSIVE\", \"missingEvidence\": [\"BOL\"], \"references\": [\"EDI812:6176002d-cef3-3c64-97c1-673b2e1d34e1\"], \"supportingEvidence\": [], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "42536e8e-d91a-3bff-877c-784c1bd6eb13": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getAsn",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0022\"}"
+                },
+                {
+                  "name": "getBol",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0022\"}"
+                },
+                {
+                  "name": "getPod",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0022\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DISPUTABLE\", \"missingEvidence\": [], \"references\": [\"EDI812:42536e8e-d91a-3bff-877c-784c1bd6eb13\"], \"supportingEvidence\": [\"BOL:SHP-EVAL-0022\", \"POD:SHP-EVAL-0022\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "5d708f53-b2c8-38f5-bdef-129eabc1fd99": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getAsn",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0029\"}"
+                },
+                {
+                  "name": "getBol",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0029\"}"
+                },
+                {
+                  "name": "getPod",
+                  "arguments": "{\"shipmentId\": \"SHP-EVAL-0029\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"INCONCLUSIVE\", \"missingEvidence\": [], \"references\": [\"EDI812:5d708f53-b2c8-38f5-bdef-129eabc1fd99\"], \"supportingEvidence\": [], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "75cc6743-37bc-3d9c-84ec-f943fea87e2d": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getPriceMaster",
+                  "arguments": "{\"sku\": \"SKU-EVAL-0036\", \"onDate\": \"2026-02-20\"}"
+                },
+                {
+                  "name": "getInvoiceLine",
+                  "arguments": "{\"invoiceNo\": \"INV-EVAL-0036\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DEDUCTION_STANDS\", \"missingEvidence\": [], \"references\": [\"EDI812:75cc6743-37bc-3d9c-84ec-f943fea87e2d\"], \"supportingEvidence\": [\"PRICE:SKU-EVAL-0036:2026-01-21\", \"INVOICE:INV-EVAL-0036\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "0536bdf2-567a-3eb0-beb3-fc258afdb013": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getPriceMaster",
+                  "arguments": "{\"sku\": \"SKU-EVAL-0043\", \"onDate\": \"2026-02-25\"}"
+                },
+                {
+                  "name": "getInvoiceLine",
+                  "arguments": "{\"invoiceNo\": \"INV-EVAL-0043\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DISPUTABLE\", \"missingEvidence\": [], \"references\": [\"EDI812:0536bdf2-567a-3eb0-beb3-fc258afdb013\"], \"supportingEvidence\": [\"PRICE:SKU-EVAL-0043:2026-01-26\", \"INVOICE:INV-EVAL-0043\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "026a289c-67e2-3374-818a-87c176197fb5": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getPriceMaster",
+                  "arguments": "{\"sku\": \"SKU-EVAL-0050\", \"onDate\": \"2026-02-19\"}"
+                },
+                {
+                  "name": "getInvoiceLine",
+                  "arguments": "{\"invoiceNo\": \"INV-EVAL-0050\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"INCONCLUSIVE\", \"missingEvidence\": [\"INVOICE_LINE\"], \"references\": [\"EDI812:026a289c-67e2-3374-818a-87c176197fb5\"], \"supportingEvidence\": [], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "7d1a1990-a555-3b1e-95d0-978cf6b986d0": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getPriceMaster",
+                  "arguments": "{\"sku\": \"SKU-EVAL-0057\", \"onDate\": \"2026-02-27\"}"
+                },
+                {
+                  "name": "getInvoiceLine",
+                  "arguments": "{\"invoiceNo\": \"INV-EVAL-0057\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DISPUTABLE\", \"missingEvidence\": [], \"references\": [\"EDI812:7d1a1990-a555-3b1e-95d0-978cf6b986d0\"], \"supportingEvidence\": [\"PRICE:SKU-EVAL-0057:2026-01-28\", \"INVOICE:INV-EVAL-0057\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "d0355d38-9df3-3276-8136-77882a182d41": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "getPriceMaster",
+                  "arguments": "{\"sku\": \"SKU-EVAL-0064\", \"onDate\": \"2026-02-19\"}"
+                },
+                {
+                  "name": "getInvoiceLine",
+                  "arguments": "{\"invoiceNo\": \"INV-EVAL-0064\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"INCONCLUSIVE\", \"missingEvidence\": [], \"references\": [\"EDI812:d0355d38-9df3-3276-8136-77882a182d41\"], \"supportingEvidence\": [], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "2b9138f8-a6b6-3a1d-b391-d5f33529efc0": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "searchPromotionAgreements",
+                  "arguments": "{\"query\": \"PA-EVAL-0071\"}"
+                },
+                {
+                  "name": "getPromotionSettlement",
+                  "arguments": "{\"docId\": \"PA-EVAL-0071\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DEDUCTION_STANDS\", \"missingEvidence\": [], \"references\": [\"EDI812:2b9138f8-a6b6-3a1d-b391-d5f33529efc0\"], \"supportingEvidence\": [\"SETTLE:PA-EVAL-0071\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "f0456510-8082-39ad-a161-a52fea7480e4": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "searchPromotionAgreements",
+                  "arguments": "{\"query\": \"PA-EVAL-0078\"}"
+                },
+                {
+                  "name": "getPromotionSettlement",
+                  "arguments": "{\"docId\": \"PA-EVAL-0078\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DISPUTABLE\", \"missingEvidence\": [], \"references\": [\"EDI812:f0456510-8082-39ad-a161-a52fea7480e4\"], \"supportingEvidence\": [\"PROMO:PA-EVAL-0078\\u00b7\\u00a73.1\", \"SETTLE:PA-EVAL-0078\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "9fa26129-c343-30c3-9ee7-cbe89963b7ee": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "searchPromotionAgreements",
+                  "arguments": "{\"query\": \"PA-EVAL-0085\"}"
+                },
+                {
+                  "name": "getPromotionSettlement",
+                  "arguments": "{\"docId\": \"PA-EVAL-0085\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"INCONCLUSIVE\", \"missingEvidence\": [\"PROMOTION_SETTLEMENT\"], \"references\": [\"EDI812:9fa26129-c343-30c3-9ee7-cbe89963b7ee\"], \"supportingEvidence\": [], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "80df26b6-b813-35db-bcb0-1f119e6cd8ae": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "searchPromotionAgreements",
+                  "arguments": "{\"query\": \"PA-EVAL-0092\"}"
+                },
+                {
+                  "name": "getPromotionSettlement",
+                  "arguments": "{\"docId\": \"PA-EVAL-0092\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"DISPUTABLE\", \"missingEvidence\": [], \"references\": [\"EDI812:80df26b6-b813-35db-bcb0-1f119e6cd8ae\"], \"supportingEvidence\": [\"PROMO:PA-EVAL-0092\\u00b7\\u00a73.1\", \"SETTLE:PA-EVAL-0092\"], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    },
+    "b5d24d77-3293-36f4-b669-395912f5aa53": {
+      "attempts": [
+        {
+          "rounds": [
+            {
+              "toolCalls": [
+                {
+                  "name": "searchPromotionAgreements",
+                  "arguments": "{\"query\": \"PA-EVAL-0099\"}"
+                },
+                {
+                  "name": "getPromotionSettlement",
+                  "arguments": "{\"docId\": \"PA-EVAL-0099\"}"
+                }
+              ]
+            },
+            {
+              "text": "{\"verdict\": \"INCONCLUSIVE\", \"missingEvidence\": [], \"references\": [\"EDI812:b5d24d77-3293-36f4-b669-395912f5aa53\"], \"supportingEvidence\": [], \"reasoning\": \"The documents returned by the tools decide this deduction.\"}"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "facts" : {
+    "caseId" : "PROMOTION-CONFLICT_UNARBITRATED-04",
+    "cell" : {
+      "category" : "PROMOTION",
+      "situation" : "CONFLICT_UNARBITRATED"
+    },
+    "seed" : 20260412,
+    "retailerId" : "NYC",
+    "reasonCode" : "PROMO",
+    "amount" : 330.00,
+    "currency" : "USD",
+    "receivedDaysAgo" : 2,
+    "deductionDaysAgo" : 19,
+    "windowDays" : 30,
+    "evidence" : {
+      "shipmentId" : null,
+      "sku" : "SKU-EVAL-0102",
+      "invoiceNo" : null,
+      "asn" : null,
+      "bol" : null,
+      "pod" : null,
+      "priceIntervals" : [ ],
+      "invoiceLine" : null,
+      "agreements" : [
+        {
+          "docId" : "PA-EVAL-0102",
+          "validFromDaysAgo" : 79,
+          "validToDaysAgo" : null,
+          "clauses" : [
+            {
+              "clauseNo" : "3.1",
+              "text" : "Retailer earns a four percent rebate on every unit purchased in the rebate window.",
+              "effect" : "SUPPORTS_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.2",
+              "text" : "No rebate is payable for units purchased in this window.",
+              "effect" : "DENIES_ACCRUAL"
+            },
+            {
+              "clauseNo" : "3.3",
+              "text" : "The rebate is settled within thirty days after the rebate window closes.",
+              "effect" : "NEUTRAL"
+            }
+          ]
+        }
+      ],
+      "settlement" : {
+        "docId" : "PA-EVAL-0102",
+        "accruedAmount" : 640.00,
+        "settledAmount" : 640.00,
+        "settledDaysAgo" : 29
+      }
+    }
+  },
+  "expectation" : {
+    "expectedState" : "INCONCLUSIVE",
+    "expectedParkedReason" : "POLICY_GAP",
+    "expectedSupportingEvidence" : [ ],
+    "oracleBranch" : "PROMOTION_SAME_LEVEL_CLAUSES_DISAGREE"
+  }
+}
