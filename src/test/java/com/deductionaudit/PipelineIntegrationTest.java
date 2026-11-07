@@ -377,6 +377,11 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(body(disputed).path("disputeId").asText()).isNotBlank();
         assertThat(detail(DISPUTE).path("daysRemaining").isNull()).isTrue();
 
+        JsonNode pausedRow = row(getJson("/deductions"), DISPUTE);
+        assertThat(pausedRow.path("daysRemaining").isNull()).isTrue();
+        assertThat(pausedRow.path("expired").asBoolean()).isFalse();
+        assertThat(getHtml("/queue").getBody()).contains(">paused<");
+
         assertThat(postJson("/deductions/" + DISPUTE + "/close", Map.of("outcome", "ACCEPTED"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "BOGUS"))
@@ -658,6 +663,74 @@ class PipelineIntegrationTest extends IntegrationTestBase {
                 Map.of("outcome", "WRITTEN_OFF"));
         assertThat(writtenOff.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(body(writtenOff).path("status").asText()).isEqualTo("WRITTEN_OFF");
+    }
+
+    @Test
+    void rootRedirectsToTheQueueWithoutRenderingHtml() {
+        ResponseEntity<String> response = get("/");
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FOUND);
+        assertThat(response.getHeaders().getLocation()).isNotNull();
+        assertThat(response.getHeaders().getLocation().toString()).endsWith("/queue");
+        assertThat(response.getBody()).isNull();
+    }
+
+    @Test
+    void queuePageOffersUrlDrivenFilterLinks() {
+        String page = getHtml("/queue").getBody();
+        for (String status : List.of("NEW", "PARKED", "AWAITING_ACTION", "DISPUTED")) {
+            assertThat(page).contains("href=\"/queue?status=" + status + "\"");
+        }
+        for (String category : List.of("SHORTAGE", "PRICE_VARIANCE", "PROMOTION")) {
+            assertThat(page).contains("href=\"/queue?category=" + category + "\"");
+        }
+        assertThat(page).contains(">All<");
+        assertThat(occurrences(page, "aria-current=\"true\">")).isEqualTo(2);
+    }
+
+    @Test
+    void queueFiltersComposeAndSelectionIsRebuiltFromTheUrl() {
+        String page = getHtml("/queue?status=PARKED&category=SHORTAGE").getBody();
+        assertThat(page).contains("href=\"/queue?status=PARKED&amp;category=SHORTAGE\"");
+        assertThat(page).contains("href=\"/queue?status=AWAITING_ACTION&amp;category=SHORTAGE\"");
+        assertThat(page).contains("href=\"/queue?status=PARKED\"");
+        assertThat(occurrences(page, "aria-current=\"true\">")).isEqualTo(2);
+
+        String categoryOnly = getHtml("/queue?category=SHORTAGE").getBody();
+        assertThat(categoryOnly).contains("href=\"/queue?category=SHORTAGE\"");
+        assertThat(occurrences(categoryOnly, "aria-current=\"true\">")).isEqualTo(2);
+
+        String commaList = getHtml("/queue?status=NEW,PARKED").getBody();
+        assertThat(occurrences(commaList, "aria-current=\"true\">")).isEqualTo(3);
+    }
+
+    @Test
+    void emptyFilteredQueueKeepsTheFiltersAndSaysNothing() {
+        String page = getHtml("/queue?status=DISPUTED&category=SHORTAGE").getBody();
+        assertThat(page).contains("Nothing in the queue.");
+        assertThat(page).contains("aria-label=\"Queue filters\"");
+        assertThat(page).contains(">All<");
+    }
+
+    @Test
+    void bothPagesLinkOneSharedStylesheet() {
+        for (String path : List.of("/queue", "/deductions/" + DISPUTE)) {
+            String page = getHtml(path).getBody();
+            assertThat(page).contains("<link rel=\"stylesheet\" href=\"/app.css\">");
+            assertThat(page).doesNotContain("<style");
+        }
+        ResponseEntity<String> css = get("/app.css");
+        assertThat(css.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(css.getBody()).contains("--ink:");
+    }
+
+    private static int occurrences(String text, String needle) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(needle, index)) >= 0) {
+            count++;
+            index += needle.length();
+        }
+        return count;
     }
 
     @Test

@@ -39,6 +39,11 @@ public class UiController {
         this.disputes = disputes;
     }
 
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/queue";
+    }
+
     @GetMapping(value = "/queue", produces = MediaType.TEXT_HTML_VALUE)
     public String queue(@RequestParam(required = false) String status,
                         @RequestParam(required = false) String category, Model model) {
@@ -48,14 +53,17 @@ public class UiController {
                 : DeductionCategory.valueOf(category);
         model.addAttribute("rows", queue.queue(statuses, categoryFilter));
         model.addAttribute("status", status);
+        model.addAttribute("statusFilter", statuses == null ? List.of()
+                : statuses.stream().map(Enum::name).toList());
         model.addAttribute("category", category);
+        model.addAttribute("statusOptions", List.of("NEW", "PARKED", "AWAITING_ACTION", "DISPUTED"));
+        model.addAttribute("categoryOptions", List.of("SHORTAGE", "PRICE_VARIANCE", "PROMOTION"));
         return "queue";
     }
 
     @GetMapping(value = "/deductions/{id}", produces = MediaType.TEXT_HTML_VALUE)
     public String detail(@PathVariable UUID id,
                          @RequestParam(required = false) Integer attempt,
-                         @RequestParam(required = false, defaultValue = "false") boolean all,
                          Model model) {
         DetailService.DetailView view = details.detail(id, attempt);
         model.addAttribute("detail", view);

@@ -11,7 +11,8 @@ Spring Boot 4.1（单进程，JDK 25）
    ├─ Agent 层      Validator ×3（tool calling 交叉核验）
    │                Drafter（结构化输出 + 证据引用）
    ├─ @Tool ×7      只读，按类别裁剪（见下）
-   └─ Trace         每步落 Mongo：入参、出参、耗时、token
+   ├─ Trace         每步落 Mongo：入参、出参、耗时、token
+   └─ MCP 入口      GET /sse：暴露全部 7 个工具，不按类裁剪、无 3s 预算、不写轨迹
         │
         ├── JDBC + pgvector ── PostgreSQL：扣款 / 争议 / 状态 / 促销协议向量
         └── Mongo driver ───── MongoDB：原始 EDI 812 JSON / Agent 轨迹（append-only）
@@ -19,6 +20,8 @@ Spring Boot 4.1（单进程，JDK 25）
 离线，不参与运行时、无 IPC：
    Python 3.12 ── 合成数据生成 + 评估 harness ── 读 PG 结果表
 ```
+
+上图的手写 SVG 版本：[architecture.svg](./assets/architecture.svg)（同一张图，以本节的 ASCII 为准）。
 
 **它不是 RAG 问答**：RAG 的输入是一段文本、输出是一段文本；这里的输入是一笔扣款，输出是一个可以拿去提交的判定 + 证据集 + 文书，中间必须调用工具去交叉验证三份互相矛盾的数据源。
 
@@ -47,6 +50,8 @@ MCP 入口暴露全部 7 个工具、不按类裁剪、不过 `InstrumentedToolC
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
+| GET | `/` | 302 到 `/queue` |
+| GET | `/queue?status=&category=` | 队列页（HTML） |
 | GET | `/deductions?status=&category=` | 队列页数据 |
 | GET | `/deductions/{id}` | 详情：证据、Verdict、轨迹、文书 |
 | POST | `/deductions/{id}/evaluate` | 触发 Validator（接受 `NEW` 与 `PARKED`） |

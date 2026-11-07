@@ -1,0 +1,148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1140" width="1400" height="1140" role="img" aria-labelledby="arch-title arch-desc">
+  <title id="arch-title">Deduction Audit Agent 架构</title>
+  <desc id="arch-desc">Browser 经 HTTP 访问 Spring Boot 4.1 单进程；进程内分 Web、域、Agent、@Tool ×7 与 Trace 五层，另有 MCP 入口 GET /sse 暴露全部 7 个工具。运行时写 PostgreSQL（JDBC + pgvector）与 MongoDB。Python 3.12 只在离线侧生成数据与跑评估，读取 PG 结果表，与主进程无 IPC。</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4a4a45"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1400" height="1140" fill="#fbfbfa"/>
+
+  <g font-family="-apple-system, 'Segoe UI', 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', Roboto, sans-serif" fill="#1f1f1d" font-size="15">
+    <text x="40" y="52" font-size="24" font-weight="700">Deduction Audit Agent · 架构</text>
+    <text x="40" y="78" font-size="14" fill="#6b6b66">Spring Boot 4.1 单进程承担全部运行时；Python 3.12 只在离线侧，与主进程无 IPC。</text>
+
+    <!-- Browser -->
+    <rect x="520" y="96" width="360" height="64" rx="10" fill="#ffffff" stroke="#d8d5cf" stroke-width="1"/>
+    <text x="548" y="124" font-size="17" font-weight="700">Browser</text>
+    <text x="548" y="146" font-size="13.5" fill="#6b6b66">Thymeleaf 两页：队列页 / 详情页</text>
+
+    <!-- HTTP -->
+    <line x1="700" y1="160" x2="700" y2="198" stroke="#4a4a45" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="712" y="187" font-size="13" fill="#6b6b66">HTTP</text>
+
+    <!-- Spring Boot process -->
+    <rect x="120" y="206" width="1000" height="586" rx="14" fill="#fdfdfb" stroke="#2a2a27" stroke-width="1.5"/>
+    <text x="144" y="238" font-size="18" font-weight="700">Spring Boot 4.1（单进程，JDK 25）</text>
+
+    <!-- Web layer -->
+    <rect x="144" y="258" width="952" height="50" rx="8" fill="#f7f7f4" stroke="#d8d5cf"/>
+    <text x="160" y="289" font-size="15" font-weight="700">Web 层</text>
+    <text x="238" y="289" font-size="14.5">队列 · 详情 · 触发 · 提交争议 · 录入结果</text>
+
+    <!-- Domain layer -->
+    <rect x="144" y="320" width="952" height="50" rx="8" fill="#f7f7f4" stroke="#d8d5cf"/>
+    <text x="160" y="351" font-size="15" font-weight="700">域层</text>
+    <text x="238" y="351" font-size="14.5">Deduction 聚合 · 状态机 · 窗口计算 · 路由（查表，无模型）</text>
+
+    <!-- Agent layer: Validator x3 -->
+    <rect x="144" y="382" width="656" height="90" rx="8" fill="#eef3f7" stroke="#b9c8d2"/>
+    <text x="160" y="410" font-size="15" font-weight="700">Agent 层 · Validator ×3</text>
+    <text x="348" y="410" font-size="13.5" fill="#4f6270">（tool calling 交叉核验）</text>
+    <rect x="160" y="425" width="130" height="30" rx="6" fill="#ffffff" stroke="#b9c8d2"/>
+    <text x="225" y="445" font-size="13.5" text-anchor="middle">缺货</text>
+    <rect x="302" y="425" width="130" height="30" rx="6" fill="#ffffff" stroke="#b9c8d2"/>
+    <text x="367" y="445" font-size="13.5" text-anchor="middle">价格</text>
+    <rect x="444" y="425" width="130" height="30" rx="6" fill="#ffffff" stroke="#b9c8d2"/>
+    <text x="509" y="445" font-size="13.5" text-anchor="middle">促销</text>
+
+    <!-- Agent layer: Drafter -->
+    <rect x="812" y="382" width="284" height="90" rx="8" fill="#eef3f7" stroke="#b9c8d2"/>
+    <text x="828" y="410" font-size="15" font-weight="700">Drafter</text>
+    <text x="828" y="438" font-size="14">结构化输出 + 证据引用</text>
+
+    <!-- Tools heading -->
+    <text x="144" y="506" font-size="15" font-weight="700">@Tool ×7 · 只读</text>
+    <text x="296" y="506" font-size="13" fill="#6b6b66">按类裁剪：Validator 只看到本类的工具；工具越少，选错概率越低，也是最小权限</text>
+
+    <!-- Shortage tools -->
+    <rect x="144" y="518" width="296" height="192" rx="8" fill="#ffffff" stroke="#d8d5cf"/>
+    <text x="160" y="545" font-size="14.5" font-weight="700">缺货 / shortage</text>
+    <text x="424" y="545" font-size="12.5" fill="#6b6b66" text-anchor="end">3 个工具</text>
+    <line x1="156" y1="556" x2="428" y2="556" stroke="#e2dfd8" stroke-width="1"/>
+
+    <rect x="154" y="566" width="276" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="166" y="584" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">getAsn</text>
+    <text x="166" y="599" font-size="12.5" fill="#6b6b66">EDI 856：我们申报发货的量与时间</text>
+
+    <rect x="154" y="614" width="276" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="166" y="632" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">getBol</text>
+    <text x="166" y="647" font-size="12.5" fill="#6b6b66">提单：承运人记录的实发量</text>
+
+    <rect x="154" y="662" width="276" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="166" y="680" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">getPod</text>
+    <text x="166" y="695" font-size="12.5" fill="#6b6b66">签收单：收货方记录的到货量</text>
+
+    <!-- Price tools -->
+    <rect x="456" y="518" width="296" height="192" rx="8" fill="#ffffff" stroke="#d8d5cf"/>
+    <text x="472" y="545" font-size="14.5" font-weight="700">价格 / price</text>
+    <text x="736" y="545" font-size="12.5" fill="#6b6b66" text-anchor="end">2 个工具</text>
+    <line x1="468" y1="556" x2="740" y2="556" stroke="#e2dfd8" stroke-width="1"/>
+
+    <rect x="466" y="566" width="276" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="478" y="584" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">getPriceMaster</text>
+    <text x="478" y="599" font-size="12.5" fill="#6b6b66">某 SKU 在某日生效的单价</text>
+
+    <rect x="466" y="614" width="276" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="478" y="632" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">getInvoiceLine</text>
+    <text x="478" y="647" font-size="12.5" fill="#6b6b66">我们实际开票的单价与数量</text>
+
+    <!-- Promotion tools -->
+    <rect x="768" y="518" width="328" height="192" rx="8" fill="#ffffff" stroke="#d8d5cf"/>
+    <text x="784" y="545" font-size="14.5" font-weight="700">促销 / promotion</text>
+    <text x="1080" y="545" font-size="12.5" fill="#6b6b66" text-anchor="end">2 个工具</text>
+    <line x1="780" y1="556" x2="1084" y2="556" stroke="#e2dfd8" stroke-width="1"/>
+
+    <rect x="778" y="566" width="308" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="790" y="584" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">searchPromotionAgreements</text>
+    <text x="790" y="599" font-size="12.5" fill="#6b6b66">向量检索促销条款，带 docId</text>
+
+    <rect x="778" y="614" width="308" height="40" rx="6" fill="#f7f7f4" stroke="#e2dfd8"/>
+    <text x="790" y="632" font-size="14.5" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace" font-weight="600">getPromotionSettlement</text>
+    <text x="790" y="647" font-size="12.5" fill="#6b6b66">协议该结多少 vs 结算记录实结多少</text>
+
+    <!-- Trace -->
+    <rect x="144" y="722" width="952" height="50" rx="8" fill="#f7f4ee" stroke="#d8d5cf"/>
+    <text x="160" y="753" font-size="15" font-weight="700">Trace</text>
+    <text x="226" y="753" font-size="14.5">每步落 Mongo：入参 · 出参 · 耗时 · token</text>
+
+    <!-- MCP entry -->
+    <rect x="1144" y="382" width="228" height="328" rx="10" fill="#eef3f6" stroke="#7d9aa3" stroke-width="1.2" stroke-dasharray="6 4"/>
+    <text x="1160" y="416" font-size="16" font-weight="700">MCP 入口</text>
+    <text x="1160" y="443" font-size="13" font-family="ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace">GET /sse · SSE 传输</text>
+    <text x="1160" y="472" font-size="14">暴露全部 7 个工具</text>
+    <text x="1160" y="496" font-size="14">不按类裁剪</text>
+    <text x="1160" y="524" font-size="12.5" fill="#6b6b66">无 3s 预算</text>
+    <text x="1160" y="544" font-size="12.5" fill="#6b6b66">不写轨迹</text>
+    <line x1="1160" y1="562" x2="1356" y2="562" stroke="#c3d2d8" stroke-width="1"/>
+    <text x="1160" y="588" font-size="12.5" fill="#4f6270">与 @Tool 共用同一批工具</text>
+    <text x="1160" y="608" font-size="12.5" fill="#4f6270">同一进程内的独立入口</text>
+    <line x1="1120" y1="600" x2="1144" y2="600" stroke="#4a4a45" stroke-width="1.5"/>
+
+    <!-- Runtime stores -->
+    <line x1="364" y1="772" x2="364" y2="840" stroke="#4a4a45" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <line x1="866" y1="772" x2="866" y2="840" stroke="#4a4a45" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="376" y="820" font-size="13.5" fill="#4a4a45">JDBC + pgvector</text>
+    <text x="878" y="820" font-size="13.5" fill="#4a4a45">Mongo driver（Trace 写入）</text>
+
+    <rect x="144" y="842" width="440" height="104" rx="10" fill="#f5f2ea" stroke="#d8d5cf"/>
+    <text x="164" y="876" font-size="17" font-weight="700">PostgreSQL</text>
+    <text x="164" y="902" font-size="14">扣款 · 争议 · 状态</text>
+    <text x="164" y="926" font-size="14">促销协议向量（pgvector）</text>
+
+    <rect x="636" y="842" width="460" height="104" rx="10" fill="#f5f2ea" stroke="#d8d5cf"/>
+    <text x="656" y="876" font-size="17" font-weight="700">MongoDB</text>
+    <text x="656" y="902" font-size="14">原始 EDI 812 JSON</text>
+    <text x="656" y="926" font-size="14">Agent 轨迹（append-only）</text>
+
+    <!-- Offline path -->
+    <line x1="364" y1="946" x2="364" y2="1000" stroke="#4a4a45" stroke-width="1.5" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+    <text x="376" y="978" font-size="13" fill="#6b6b66">读 PG 结果表（离线）</text>
+
+    <rect x="144" y="1006" width="440" height="100" rx="10" fill="#faf9f5" stroke="#9a9891" stroke-width="1.2" stroke-dasharray="8 5"/>
+    <text x="164" y="1038" font-size="16" font-weight="700">Python 3.12</text>
+    <text x="164" y="1062" font-size="14">合成数据生成 + 评估 harness</text>
+    <text x="164" y="1086" font-size="13" fill="#6b6b66">离线 · 不参与运行时 · 无 IPC</text>
+  </g>
+</svg>
