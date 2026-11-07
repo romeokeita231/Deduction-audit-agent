@@ -11,7 +11,8 @@ Spring Boot 4.1（单进程，JDK 25）
    ├─ Agent 层      Validator ×3（tool calling 交叉核验）
    │                Drafter（结构化输出 + 证据引用）
    ├─ @Tool ×7      只读，按类别裁剪（见下）
-   └─ Trace         每步落 Mongo：入参、出参、耗时、token
+   ├─ Trace         每步落 Mongo：入参、出参、耗时、token
+   └─ MCP 入口      GET /sse：暴露全部 7 个工具，不按类裁剪、无 3s 预算、不写轨迹
         │
         ├── JDBC + pgvector ── PostgreSQL：扣款 / 争议 / 状态 / 促销协议向量
         └── Mongo driver ───── MongoDB：原始 EDI 812 JSON / Agent 轨迹（append-only）

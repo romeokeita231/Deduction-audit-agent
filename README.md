@@ -97,7 +97,7 @@ infrastructure failures, never an unsatisfactory verdict.
 
 ## State machine
 
-One deduction has one state machine; a dispute has none of its own. Ten states, thirteen
+One deduction has one state machine; a dispute has none of its own. Ten states, sixteen
 transitions, seven invariants, and `INCONCLUSIVE` can never become `DISPUTED`. `PARKED` is
 one state with four distinguishable reasons: unmapped code, evaluation failure, missing
 evidence, or a policy gap. Expiry has both a nightly scan and a lazy check so that a

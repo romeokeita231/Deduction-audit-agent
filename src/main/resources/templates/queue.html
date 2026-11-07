@@ -14,7 +14,7 @@
         <div class="filter-group">
             <span class="filter-label">Status</span>
             <a th:href="${category == null or #strings.isEmpty(category)} ? @{/queue} : @{/queue(category=${category})}"
-               th:attr="aria-current=${status == null or #strings.isEmpty(status)} ? 'true' : null">All</a>
+               th:attr="aria-current=${#lists.isEmpty(statusFilter)} ? 'true' : null">All</a>
             <a th:each="option : ${statusOptions}"
                th:href="${category == null or #strings.isEmpty(category)} ? @{/queue(status=${option})} : @{/queue(status=${option}, category=${category})}"
                th:attr="aria-current=${#lists.contains(statusFilter, option)} ? 'true' : null"
@@ -22,6 +22,8 @@
         </div>
         <div class="filter-group">
             <span class="filter-label">Category</span>
+            <a th:href="${status == null or #strings.isEmpty(status)} ? @{/queue} : @{/queue(status=${status})}"
+               th:attr="aria-current=${category == null or #strings.isEmpty(category)} ? 'true' : null">All</a>
             <a th:each="option : ${categoryOptions}"
                th:href="${status == null or #strings.isEmpty(status)} ? @{/queue(category=${option})} : @{/queue(status=${status}, category=${option})}"
                th:attr="aria-current=${category == option} ? 'true' : null"

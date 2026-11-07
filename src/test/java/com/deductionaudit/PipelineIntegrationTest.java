@@ -684,7 +684,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
             assertThat(page).contains("href=\"/queue?category=" + category + "\"");
         }
         assertThat(page).contains(">All<");
-        assertThat(occurrences(page, "aria-current=\"true\">")).isEqualTo(1);
+        assertThat(occurrences(page, "aria-current=\"true\">")).isEqualTo(2);
     }
 
     @Test
@@ -692,6 +692,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         String page = getHtml("/queue?status=PARKED&category=SHORTAGE").getBody();
         assertThat(page).contains("href=\"/queue?status=PARKED&amp;category=SHORTAGE\"");
         assertThat(page).contains("href=\"/queue?status=AWAITING_ACTION&amp;category=SHORTAGE\"");
+        assertThat(page).contains("href=\"/queue?status=PARKED\"");
         assertThat(occurrences(page, "aria-current=\"true\">")).isEqualTo(2);
 
         String categoryOnly = getHtml("/queue?category=SHORTAGE").getBody();
@@ -699,7 +700,7 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(occurrences(categoryOnly, "aria-current=\"true\">")).isEqualTo(2);
 
         String commaList = getHtml("/queue?status=NEW,PARKED").getBody();
-        assertThat(occurrences(commaList, "aria-current=\"true\">")).isEqualTo(2);
+        assertThat(occurrences(commaList, "aria-current=\"true\">")).isEqualTo(3);
     }
 
     @Test
