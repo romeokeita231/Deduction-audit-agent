@@ -39,6 +39,11 @@ public class UiController {
         this.disputes = disputes;
     }
 
+    @GetMapping("/")
+    public String root() {
+        return "redirect:/queue";
+    }
+
     @GetMapping(value = "/queue", produces = MediaType.TEXT_HTML_VALUE)
     public String queue(@RequestParam(required = false) String status,
                         @RequestParam(required = false) String category, Model model) {
@@ -49,6 +54,8 @@ public class UiController {
         model.addAttribute("rows", queue.queue(statuses, categoryFilter));
         model.addAttribute("status", status);
         model.addAttribute("category", category);
+        model.addAttribute("statusOptions", List.of("NEW", "PARKED", "AWAITING_ACTION", "DISPUTED"));
+        model.addAttribute("categoryOptions", List.of("SHORTAGE", "PRICE_VARIANCE", "PROMOTION"));
         return "queue";
     }
 
