@@ -35,12 +35,34 @@
         .muted { color: var(--muted); }
         .badge { display: inline-block; padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; font-size: 12px; color: var(--muted); }
         .expired { color: var(--warn); }
+        .filters { display: flex; flex-wrap: wrap; gap: 10px 24px; margin: 0 0 24px; }
+        .filter-group { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+        .filter-label { color: var(--muted); font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase; }
+        .filters a[aria-current="true"] { color: var(--ink); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
     </style>
 </head>
 <body>
 <main>
     <h1>Deduction queue</h1>
     <p class="sub">Sorted by days remaining in the retailer's local date. Rows past the window are marked.</p>
+    <nav class="filters" aria-label="Queue filters">
+        <div class="filter-group">
+            <span class="filter-label">Status</span>
+            <a th:href="@{/queue}"
+               th:attr="aria-current=${(status == null or #strings.isEmpty(status)) and (category == null or #strings.isEmpty(category))} ? 'true' : null">All</a>
+            <a th:each="option : ${statusOptions}"
+               th:href="${category == null or #strings.isEmpty(category)} ? @{/queue(status=${option})} : @{/queue(status=${option}, category=${category})}"
+               th:attr="aria-current=${status == option} ? 'true' : null"
+               th:text="${option}">NEW</a>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Category</span>
+            <a th:each="option : ${categoryOptions}"
+               th:href="${status == null or #strings.isEmpty(status)} ? @{/queue(category=${option})} : @{/queue(status=${status}, category=${option})}"
+               th:attr="aria-current=${category == option} ? 'true' : null"
+               th:text="${option}">SHORTAGE</a>
+        </div>
+    </nav>
     <table>
         <thead>
         <tr>
