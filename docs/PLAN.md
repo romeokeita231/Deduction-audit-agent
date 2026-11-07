@@ -51,7 +51,7 @@ W1 从 2026-10-26（周一）起算。
 | M4 | W7 | 文书与轨迹 | `claim` 由判决投影、`narrative` 由模型写、`digest` 冻结；五条硬校验全过；503/500 分档；轨迹按 deduction 查回（含 `draft` 轮次）；只看回放即可跑通 |
 | M5 | W8 | Web UI | 两页可用，倒计时正确，轨迹时间线可读 |
 | M6 | W9 | 评估 | 105 条冲突矩阵数据 + harness 输出三类指标 |
-| M7 | W10 | 固化 | CI 三条检查全绿（其中评估跑 fixture，不调模型）；集成测试（Testcontainers 组）全绿；MCP stretch 视进度 |
+| M7 | W10 | 固化 | CI 三条检查全绿（其中评估跑 fixture，不调模型）；集成测试（Testcontainers 组）全绿；MCP server 起得来且客户端 `getPod` 调用有录屏（`docs/mcp-demo/`） |
 | M8 | W11 | 交付面 | 英文 README、架构图、3 分钟录屏 |
 | M9 | W12 | 设计问答集 | `docs/QA.md` 20 问 + 架构讲解稿 |
 | M10 | W13–W14 | 缓冲 | 打磨、修补、文档完善 |
@@ -111,7 +111,6 @@ W1 从 2026-10-26（周一）起算。
 | 近期 | + fixture 评估进 CI（录制 / 回放） | +2h |
 | 近期 | + 重跑守卫（`policyVersion` / `mappingVersion`） | +1h |
 | 近期 | 集成测试：计划写 2 条，实为 5 条 | ±0 |
-| 近期 | − MCP server（stretch）：starter 存在，Docker Desktop 无法启动（`AppData\Local\Docker` 日志目录 Access denied），无法起 PG/Mongo 验证并录屏真实 `getPod` 调用 | ±0 |
 | **累计** | | **+6h** |
 
 累计 6 小时记在缓冲里。**缓冲最多吸收 10h 的净增，超过就必须砍一项**——写死上限比"尽量控制"有用。
