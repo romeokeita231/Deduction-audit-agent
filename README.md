@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/romeokeita231/Deduction-audit-agent/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/romeokeita231/Deduction-audit-agent/actions/workflows/ci.yml)
 
+[中文](README.zh.md) | English
+
 A retailer takes money out of a CPG supplier's payable invoice and attaches a reason
 code. This system decides, for one deduction, whether it stands, whether it is worth
 disputing, how much of the dispute window is left, and drafts the dispute with evidence.
