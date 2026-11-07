@@ -34,6 +34,8 @@ Spring Boot 4.1（单进程，JDK 25）
 | `searchPromotionAgreements` | 向量检索促销条款，带 `docId` | | | ✓ |
 | `getPromotionSettlement` | 协议该结多少 vs 结算记录实结多少 | | | ✓ |
 
+MCP 入口暴露全部 7 个工具、不按类裁剪、不过 `InstrumentedToolCallback`（无 3s 预算、不写轨迹）。裁剪是 Validator 那条路径的性质，不是工具本身的性质。
+
 四条规则：
 
 - **一笔扣款只跑一个 Validator。** 路由由映射表决定，映射不到就进 `PARKED`。**路由路径里没有模型调用**，也不打算加——分类是可运维的数据，不是一次推理。
@@ -51,6 +53,7 @@ Spring Boot 4.1（单进程，JDK 25）
 | POST | `/deductions/{id}/dispute` | 提交争议（守卫：`DISPUTABLE`） |
 | POST | `/deductions/{id}/close` | 接受 / 放弃 / 转人工（body 带 outcome） |
 | POST | `/deductions/{id}/result` | 录入 `WON` / `LOST` |
+| GET | `/sse` | MCP 入口（SSE 传输），暴露 7 个工具 |
 
 对 `PARKED` 的一次 `/evaluate` 覆盖 `PARKED → NEW → EVALUATING` 两条转移，历史里记两行。`UNMAPPED_CODE` 且映射表仍未补齐时返回 409——不补映射就重跑，只会把同一条扣款再停一次；`POLICY_GAP` 同理，重跑前必须先改政策文本，靠 `policyVersion` 校验。
 
