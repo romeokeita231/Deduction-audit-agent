@@ -53,6 +53,8 @@ public class UiController {
                 : DeductionCategory.valueOf(category);
         model.addAttribute("rows", queue.queue(statuses, categoryFilter));
         model.addAttribute("status", status);
+        model.addAttribute("statusFilter", statuses == null ? List.of()
+                : statuses.stream().map(Enum::name).toList());
         model.addAttribute("category", category);
         model.addAttribute("statusOptions", List.of("NEW", "PARKED", "AWAITING_ACTION", "DISPUTED"));
         model.addAttribute("categoryOptions", List.of("SHORTAGE", "PRICE_VARIANCE", "PROMOTION"));

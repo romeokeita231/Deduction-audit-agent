@@ -24,11 +24,10 @@ date-effective price master; promotion deductions compare the agreement with the
 settlement record. The Agent must fetch each source, see the disagreement, and apply the
 written policy that says which source wins. Averaging the numbers is not a verdict.
 
-**The output is a verdict, an evidence set, and a dispute document.** The verdict is one
-of four labeled outcomes, including two distinct kinds of "I do not know": missing
-evidence and no rule to decide. The evidence set is a closed list of stable IDs the model
-had to cite. The document's structure is projected deterministically from the verdict; the
-model writes only the prose. That is an agent with a contract, not a generated answer.
+**The output is a verdict, an evidence set, and a dispute document.** The verdict is one of
+four labeled outcomes, including two kinds of "I do not know": missing evidence and no
+rule to decide. The evidence set is a closed list of stable IDs the model had to cite; the
+document's structure is projected from the verdict and only the prose is model-written.
 
 ## Quickstart
 
@@ -61,7 +60,7 @@ workflow is under [Reproducing the numbers](#reproducing-the-numbers).
 - **Verdicts express doubt.** `DEDUCTION_STANDS`, `DISPUTABLE` and `INCONCLUSIVE`, with
   `INCONCLUSIVE` split into missing evidence versus no arbitrating rule. The two causes
   lead to different parking reasons and different human follow-up.
-- **The state machine owns the timeline.** Ten states, thirteen transitions and seven
+- **The state machine owns the timeline.** Ten states, sixteen transitions and seven
   invariants. The dispute window is a `LocalDate` in the retailer's time zone; expiry is
   both scheduled and checked lazily on every transition; the queue sorts by days
   remaining and keeps parked rows in the sort.

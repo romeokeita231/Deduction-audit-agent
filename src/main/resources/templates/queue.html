@@ -17,7 +17,7 @@
                th:attr="aria-current=${status == null or #strings.isEmpty(status)} ? 'true' : null">All</a>
             <a th:each="option : ${statusOptions}"
                th:href="${category == null or #strings.isEmpty(category)} ? @{/queue(status=${option})} : @{/queue(status=${option}, category=${category})}"
-               th:attr="aria-current=${status == option} ? 'true' : null"
+               th:attr="aria-current=${#lists.contains(statusFilter, option)} ? 'true' : null"
                th:text="${option}">NEW</a>
         </div>
         <div class="filter-group">

@@ -49,6 +49,8 @@ MCP 入口暴露全部 7 个工具、不按类裁剪、不过 `InstrumentedToolC
 
 | 方法 | 路径 | 作用 |
 |---|---|---|
+| GET | `/` | 302 到 `/queue` |
+| GET | `/queue?status=&category=` | 队列页（HTML） |
 | GET | `/deductions?status=&category=` | 队列页数据 |
 | GET | `/deductions/{id}` | 详情：证据、Verdict、轨迹、文书 |
 | POST | `/deductions/{id}/evaluate` | 触发 Validator（接受 `NEW` 与 `PARKED`） |

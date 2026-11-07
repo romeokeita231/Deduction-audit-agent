@@ -377,6 +377,11 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(body(disputed).path("disputeId").asText()).isNotBlank();
         assertThat(detail(DISPUTE).path("daysRemaining").isNull()).isTrue();
 
+        JsonNode pausedRow = row(getJson("/deductions"), DISPUTE);
+        assertThat(pausedRow.path("daysRemaining").isNull()).isTrue();
+        assertThat(pausedRow.path("expired").asBoolean()).isFalse();
+        assertThat(getHtml("/queue").getBody()).contains(">paused<");
+
         assertThat(postJson("/deductions/" + DISPUTE + "/close", Map.of("outcome", "ACCEPTED"))
                 .getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
         assertThat(postJson("/deductions/" + DISPUTE + "/result", Map.of("result", "BOGUS"))
@@ -692,6 +697,9 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         String categoryOnly = getHtml("/queue?category=SHORTAGE").getBody();
         assertThat(categoryOnly).contains("href=\"/queue?category=SHORTAGE\"");
         assertThat(occurrences(categoryOnly, "aria-current=\"true\">")).isEqualTo(2);
+
+        String commaList = getHtml("/queue?status=NEW,PARKED").getBody();
+        assertThat(occurrences(commaList, "aria-current=\"true\">")).isEqualTo(2);
     }
 
     @Test
