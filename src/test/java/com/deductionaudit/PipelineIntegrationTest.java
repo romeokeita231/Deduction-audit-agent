@@ -688,6 +688,10 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(page).contains("href=\"/queue?status=PARKED&amp;category=SHORTAGE\"");
         assertThat(page).contains("href=\"/queue?status=AWAITING_ACTION&amp;category=SHORTAGE\"");
         assertThat(occurrences(page, "aria-current=\"true\">")).isEqualTo(2);
+
+        String categoryOnly = getHtml("/queue?category=SHORTAGE").getBody();
+        assertThat(categoryOnly).contains("href=\"/queue?category=SHORTAGE\"");
+        assertThat(occurrences(categoryOnly, "aria-current=\"true\">")).isEqualTo(2);
     }
 
     @Test

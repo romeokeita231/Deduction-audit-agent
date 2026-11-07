@@ -48,8 +48,8 @@
     <nav class="filters" aria-label="Queue filters">
         <div class="filter-group">
             <span class="filter-label">Status</span>
-            <a th:href="@{/queue}"
-               th:attr="aria-current=${(status == null or #strings.isEmpty(status)) and (category == null or #strings.isEmpty(category))} ? 'true' : null">All</a>
+            <a th:href="${category == null or #strings.isEmpty(category)} ? @{/queue} : @{/queue(category=${category})}"
+               th:attr="aria-current=${status == null or #strings.isEmpty(status)} ? 'true' : null">All</a>
             <a th:each="option : ${statusOptions}"
                th:href="${category == null or #strings.isEmpty(category)} ? @{/queue(status=${option})} : @{/queue(status=${option}, category=${category})}"
                th:attr="aria-current=${status == option} ? 'true' : null"
