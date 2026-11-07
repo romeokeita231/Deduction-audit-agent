@@ -59,13 +59,13 @@ thing on the queue page that may animate at all.
 ## CI
 
 `.github/workflows/ci.yml` is one job with two test steps: `python -m unittest eval.metrics.test_metrics`
-and then `./mvnw -B test` (unit tests plus the Testcontainers integration group). On Windows the same
-commands are `python -m unittest eval.metrics.test_metrics` and `.\mvnw.cmd -B test`; set `DOCKER_HOST`
-first as described above. CI does not need `DOCKER_HOST` because Testcontainers finds the socket on the
-Linux runner. `python` must be 3.12.
+and then `./mvnw -B test` (unit tests plus the Testcontainers-backed integration tests). On Windows the
+same commands are `python -m unittest eval.metrics.test_metrics` and `.\mvnw.cmd -B test`; set
+`DOCKER_HOST` first as described above. CI does not need `DOCKER_HOST` because Testcontainers finds the
+socket on the Linux runner. `python` 3.12 must be on `PATH`; `CiFixtureTest` shells out to `python`.
 
-First green full run (both container suites, warm Maven cache): 1m24s, 2026-11-07, `ubuntu-latest`.
-One-off observation, not a budget assertion.
+First green job after the container-lifecycle fix (both container suites, warm Maven cache): 1m24s,
+2026-11-07, `ubuntu-latest`. One-off observation, not a budget assertion.
 
 The containers in `IntegrationTestBase` start once per JVM in a static block, not once per test class:
 Spring's context cache outlives a class, so a restarted container gets a new port while the cached
