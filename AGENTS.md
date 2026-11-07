@@ -59,9 +59,10 @@ thing on the queue page that may animate at all.
 ## CI
 
 `.github/workflows/ci.yml` is one job with two test steps: `python -m unittest eval.metrics.test_metrics`
-and then `./mvnw -B test` (unit tests plus the Testcontainers integration group). Reproduce it locally
-with the same two commands. On Windows, set `DOCKER_HOST` first as described above; CI does not, because
-Testcontainers finds the socket on the Linux runner. `python` must be 3.12.
+and then `./mvnw -B test` (unit tests plus the Testcontainers integration group). On Windows the same
+commands are `python -m unittest eval.metrics.test_metrics` and `.\mvnw.cmd -B test`; set `DOCKER_HOST`
+first as described above. CI does not need `DOCKER_HOST` because Testcontainers finds the socket on the
+Linux runner. `python` must be 3.12.
 
 First green full run (both container suites, warm Maven cache): 1m24s, 2026-11-07, `ubuntu-latest`.
 One-off observation, not a budget assertion.
