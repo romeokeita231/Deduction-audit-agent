@@ -12,5 +12,6 @@
 - [术语表](GLOSSARY.md)——这套系统使用的词汇，以及它刻意回避的词
 - [范围与里程碑](docs/PLAN.md)——它做什么，以及它刻意不做什么
 - [架构](docs/ARCHITECTURE.md)
+- [架构图](docs/assets/architecture.svg)
 - [状态机](docs/STATE-MACHINE.md)
 - [决策记录](docs/adr/)——ADR 0001–0007
