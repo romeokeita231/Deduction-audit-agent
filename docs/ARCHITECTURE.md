@@ -20,6 +20,8 @@ Spring Boot 4.1（单进程，JDK 25）
    Python 3.12 ── 合成数据生成 + 评估 harness ── 读 PG 结果表
 ```
 
+上图的手写 SVG 版本：[architecture.svg](./assets/architecture.svg)（同一张图，以本节的 ASCII 为准）。
+
 **它不是 RAG 问答**：RAG 的输入是一段文本、输出是一段文本；这里的输入是一笔扣款，输出是一个可以拿去提交的判定 + 证据集 + 文书，中间必须调用工具去交叉验证三份互相矛盾的数据源。
 
 ## 工具集

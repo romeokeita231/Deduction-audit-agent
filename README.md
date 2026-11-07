@@ -16,5 +16,6 @@ All data in this repository is synthetic.
 - [Glossary](GLOSSARY.md) — the vocabulary this system uses, and the words it avoids
 - [Scope and milestones](docs/PLAN.md) — what it does, and what it deliberately does not
 - [Architecture](docs/ARCHITECTURE.md)
+- [Architecture diagram](docs/assets/architecture.svg)
 - [State machine](docs/STATE-MACHINE.md)
 - [Decision records](docs/adr/) — ADR 0001–0007
