@@ -21,8 +21,6 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.client.EntityExchangeResult;
 import org.springframework.test.web.servlet.client.RestTestClient;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
@@ -32,18 +30,19 @@ import java.time.ZoneOffset;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles({"test", "replay"})
-@Testcontainers
 @Sql(scripts = "classpath:seed.sql")
 @Import(IntegrationTestBase.FixedClock.class)
 public abstract class IntegrationTestBase {
 
     protected static final Instant FIXED_NOW = Instant.parse("2026-03-10T06:59:00Z");
 
-    @Container
     static final PostgreSQLContainer POSTGRES = new PostgreSQLContainer("pgvector/pgvector:pg16");
-
-    @Container
     static final MongoDBContainer MONGO = new MongoDBContainer("mongo:7");
+
+    static {
+        POSTGRES.start();
+        MONGO.start();
+    }
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {

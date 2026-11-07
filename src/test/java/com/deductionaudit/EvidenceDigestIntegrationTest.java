@@ -11,7 +11,6 @@ import com.deductionaudit.shared.ApiException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.annotation.DirtiesContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -22,8 +21,6 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-// Containers are restarted per test class, so the cached context must not outlive this one.
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class EvidenceDigestIntegrationTest extends IntegrationTestBase {
 
     private static final String SHORTAGE = "11111111-1111-1111-1111-111111111111";

@@ -10,6 +10,11 @@ spring:
   ai:
     model:
       chat: ${MODEL_PROVIDER:openai}
+    mcp:
+      server:
+        name: deduction-audit-evidence
+        version: 0.1.0
+        protocol: SSE
     openai:
       api-key: ${MODEL_API_KEY:${DEEPSEEK_API_KEY:}}
       base-url: ${MODEL_BASE_URL:https://api.deepseek.com}
