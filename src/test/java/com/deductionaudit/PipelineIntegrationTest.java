@@ -702,6 +702,18 @@ class PipelineIntegrationTest extends IntegrationTestBase {
         assertThat(page).contains(">All<");
     }
 
+    @Test
+    void bothPagesLinkOneSharedStylesheet() {
+        for (String path : List.of("/queue", "/deductions/" + DISPUTE)) {
+            String page = getHtml(path).getBody();
+            assertThat(page).contains("<link rel=\"stylesheet\" href=\"/app.css\">");
+            assertThat(page).doesNotContain("<style");
+        }
+        ResponseEntity<String> css = get("/app.css");
+        assertThat(css.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(css.getBody()).contains("--ink:");
+    }
+
     private static int occurrences(String text, String needle) {
         int count = 0;
         int index = 0;

@@ -62,7 +62,6 @@ public class UiController {
     @GetMapping(value = "/deductions/{id}", produces = MediaType.TEXT_HTML_VALUE)
     public String detail(@PathVariable UUID id,
                          @RequestParam(required = false) Integer attempt,
-                         @RequestParam(required = false, defaultValue = "false") boolean all,
                          Model model) {
         DetailService.DetailView view = details.detail(id, attempt);
         model.addAttribute("detail", view);
